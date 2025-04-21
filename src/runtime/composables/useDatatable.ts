@@ -68,7 +68,33 @@ export function useDatatable(config: TableConfig) {
         })
       } else if (typeof config.dataSource === 'string') {
         // URL data source (API endpoint)
-        data = await fetchFromApi(config.dataSource)
+        const apiResponse = await fetchFromApi(config.dataSource)
+        console.log('API response in loadData:', apiResponse)
+
+        // Handle different API response formats
+        if (apiResponse && typeof apiResponse === 'object') {
+          if (Array.isArray(apiResponse)) {
+            // Response is an array
+            data = apiResponse
+          } else if (apiResponse.items && Array.isArray(apiResponse.items)) {
+            // Response has items property which is an array
+            data = apiResponse.items
+
+            // Update pagination if available
+            if (apiResponse.pagination && typeof apiResponse.pagination === 'object') {
+              if (apiResponse.pagination.total !== undefined) {
+                state.value.pagination.total = apiResponse.pagination.total
+              }
+            }
+          } else {
+            // Try to extract data from response
+            console.warn('Unexpected API response format:', apiResponse)
+            data = []
+          }
+        } else {
+          console.warn('Invalid API response:', apiResponse)
+          data = []
+        }
       } else if (typeof config.dataSource === 'object') {
         // Object data source (assuming it has items property)
         data = (config.dataSource as any).items || []
@@ -78,10 +104,8 @@ export function useDatatable(config: TableConfig) {
       state.value.items = data
       console.log('Data loaded, items:', state.value.items)
 
-      // If server pagination, update total
-      if (config.pagination === 'server' && typeof data === 'object' && 'total' in data) {
-        state.value.pagination.total = (data as any).total
-      } else {
+      // If server pagination not already handled, update total
+      if (config.pagination !== 'server' || state.value.pagination.total === 0) {
         // For client-side pagination, set total to array length
         state.value.pagination.total = data.length
       }
@@ -288,7 +312,7 @@ export function useDatatable(config: TableConfig) {
   /**
    * Fetch data from API
    */
-  const fetchFromApi = async (url: string): Promise<any[]> => {
+  const fetchFromApi = async (url: string): Promise<any> => {
     const { pagination, sort, filters, searchQuery } = state.value
 
     // Build query parameters
@@ -323,14 +347,24 @@ export function useDatatable(config: TableConfig) {
       params.append('with', relationNames)
     }
 
-    // Make the request
-    const response = await fetch(`${url}?${params.toString()}`)
+    console.log(`Fetching data from API: ${url}?${params.toString()}`)
 
-    if (!response.ok) {
-      throw new Error(`API error: ${response.status} ${response.statusText}`)
+    try {
+      // Make the request
+      const response = await fetch(`${url}?${params.toString()}`)
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status} ${response.statusText}`)
+      }
+
+      const result = await response.json()
+      console.log('API response:', result)
+
+      return result
+    } catch (error) {
+      console.error('Error fetching from API:', error)
+      throw error
     }
-
-    return await response.json()
   }
 
   /**

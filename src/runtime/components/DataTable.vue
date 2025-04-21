@@ -89,9 +89,23 @@
 
           <template v-else>
             <!-- Debug info -->
-            <tr v-if="debug.displayItems === 0 && debug.dataLength > 0" class="arpix-data-table-debug-row">
+            <tr v-if="debug.displayItems === 0" class="arpix-data-table-debug-row">
               <td :colspan="visibleColumns.length" class="arpix-data-table-debug-cell">
-                <div class="arpix-data-table-debug">Data available but not displayed. Debug: {{ debug }}</div>
+                <div class="arpix-data-table-debug">
+                  <p>No data to display. Debug information:</p>
+                  <ul>
+                    <li>Data source type: {{ debug.dataSourceType }}</li>
+                    <li>Is array: {{ debug.isArray }}</li>
+                    <li>Data length: {{ debug.dataLength }}</li>
+                    <li>State items: {{ debug.stateItems }}</li>
+                    <li>Display items: {{ debug.displayItems }}</li>
+                    <li>Pagination: {{ debug.pagination }}</li>
+                    <li>Loading: {{ debug.loading }}</li>
+                    <li>Error: {{ debug.error }}</li>
+                    <li>Data source: {{ debug.dataSource }}</li>
+                    <li>Pagination type: {{ debug.paginationType }}</li>
+                  </ul>
+                </div>
               </td>
             </tr>
             <slot name="body" :items="displayItems" :columns="visibleColumns" :selected="selected">
@@ -277,7 +291,12 @@ const debug = computed(() => {
     stateSearchQuery: state.value.searchQuery,
     searchable: props.searchable,
     sort: sort.value,
-    columns: visibleColumns.value.map(col => ({ key: col.key, sortable: col.sortable }))
+    columns: visibleColumns.value.map(col => ({ key: col.key, sortable: col.sortable })),
+    pagination: state.value.pagination,
+    loading: state.value.loading,
+    error: state.value.error,
+    dataSource: props.dataSource,
+    paginationType: props.pagination
   }
 })
 
@@ -410,6 +429,16 @@ onMounted(async () => {
   if (Array.isArray(props.dataSource)) {
     state.value.items = [...props.dataSource]
     console.log('Directly assigned array data:', state.value.items.length, 'items')
+  } else if (typeof props.dataSource === 'string') {
+    // Load data from API
+    console.log('Loading data from API:', props.dataSource)
+    try {
+      await loadData()
+      console.log('Data loaded from API:', state.value.items.length, 'items')
+    } catch (error) {
+      console.error('Error loading data from API:', error)
+      state.value.error = error instanceof Error ? error.message : 'Failed to load data'
+    }
   } else {
     // Load data from other sources
     await loadData()
@@ -566,16 +595,31 @@ onMounted(async () => {
   margin-top: 0.5rem;
   font-size: 0.75rem;
   color: var(--arpix-secondary-color);
-  opacity: 0.7;
+  opacity: 0.9;
+  text-align: left;
+}
+
+.arpix-data-table-debug p {
+  margin-bottom: 0.5rem;
+  font-weight: bold;
+}
+
+.arpix-data-table-debug ul {
+  list-style-type: none;
+  padding-left: 0.5rem;
+}
+
+.arpix-data-table-debug li {
+  margin-bottom: 0.25rem;
 }
 
 .arpix-data-table-debug-row {
-  background-color: rgba(255, 244, 229, 0.5);
+  background-color: rgba(255, 244, 229, 0.7);
 }
 
 .arpix-data-table-debug-cell {
   padding: 1rem;
-  text-align: center;
+  text-align: left;
   border-bottom: 1px solid var(--arpix-border-color);
 }
 
