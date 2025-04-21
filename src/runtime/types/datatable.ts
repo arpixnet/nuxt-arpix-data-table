@@ -31,6 +31,12 @@ export interface TableColumn {
   type?: 'text' | 'number' | 'date' | 'boolean' | 'relation' | 'custom';
 
   /**
+   * Possible values for enum/status fields
+   * Used for generating filter options
+   */
+  enumValues?: string[];
+
+  /**
    * Function to format the cell value before display
    * Note: This will only work on the client-side
    */
@@ -91,7 +97,7 @@ export interface FilterConfig {
   /**
    * Operator for filtering
    */
-  operator?: '=' | '!=' | '>' | '>=' | '<' | '<=' | 'contains' | 'startsWith' | 'endsWith';
+  operator?: '=' | '!=' | '>' | '>=' | '<' | '<=' | 'contains' | 'startsWith' | 'endsWith' | 'in';
 
   /**
    * Value to filter by

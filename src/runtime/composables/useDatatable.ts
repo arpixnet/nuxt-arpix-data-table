@@ -143,6 +143,15 @@ export function useDatatable(config: TableConfig) {
 
     // Apply filters
     if (Object.keys(state.value.filters).length > 0) {
+      console.log('Applying filters in processClientData:', state.value.filters)
+
+      // Debug each filter
+      Object.entries(state.value.filters).forEach(([key, filter]) => {
+        if (typeof filter === 'object' && filter.value === false) {
+          console.log(`Found boolean false filter for ${key}:`, filter);
+        }
+      });
+
       processed = applyFilters(processed, state.value.filters)
       console.log('After filters:', processed.length, 'items')
     }
@@ -235,26 +244,59 @@ export function useDatatable(config: TableConfig) {
       return data
     }
 
-    return data.filter(item => {
+    const filteredData = data.filter(item => {
       return Object.entries(filters).every(([key, filter]) => {
-        // Skip empty filters
-        if (!filter || (typeof filter === 'object' && !filter.value)) return true
+        // Skip empty filters, but be careful with boolean false values
+        if (!filter) {
+          console.log(`Skipping null/undefined filter for ${key}:`, filter);
+          return true;
+        }
+
+        if (typeof filter === 'object') {
+          // For boolean filters, we need to check if value is explicitly false
+          const isBooleanFilter = filter.value === false;
+          const isEmpty = filter.value === undefined || filter.value === null || filter.value === '';
+
+          if (isEmpty && !isBooleanFilter) {
+            console.log(`Skipping empty filter for ${key}:`, filter);
+            return true;
+          }
+        }
 
         // Get column definition to determine type
-        const column = config.columns?.find(col => col.key === key)
+        const column = config.columns?.find(col => col.key === key);
 
         // Handle simple filters (key: value)
         if (typeof filter !== 'object') {
-          return compareValues(item[key], filter, '=', column?.type)
+          const result = compareValues(item[key], filter, '=', column?.type);
+          console.log(`Simple filter for ${key}:`, { itemValue: item[key], filterValue: filter, result });
+          return result;
         }
 
         // Handle complex filters
-        const { field, operator, value } = filter
-        const itemValue = item[field || key]
+        const { field, operator, value } = filter;
+        const itemValue = item[field || key];
 
-        return compareValues(itemValue, value, operator, column?.type)
-      })
-    })
+        // Special debug for boolean filters
+        if (column?.type === 'boolean' || typeof itemValue === 'boolean') {
+          console.log(`Boolean filter check for ${key}:`, {
+            itemValue,
+            filterValue: value,
+            operator,
+            itemValueType: typeof itemValue,
+            filterValueType: typeof value,
+            item
+          });
+        }
+
+        const result = compareValues(itemValue, value, operator, column?.type);
+        console.log(`Complex filter for ${key}:`, { itemValue, filterValue: value, operator, result });
+        return result;
+      });
+    });
+
+    console.log('Filtered data:', filteredData.length, 'items out of', data.length);
+    return filteredData;
   }
 
   /**
@@ -263,32 +305,150 @@ export function useDatatable(config: TableConfig) {
   const compareValues = (itemValue: any, filterValue: any, operator: string, type?: string): boolean => {
     // Handle null/undefined values
     if (itemValue === null || itemValue === undefined) {
+      // Special case for boolean filters with false value
+      if (type === 'boolean' && filterValue === false && operator === '=') {
+        console.log('Special case: comparing null/undefined with false');
+        return true; // Consider null/undefined as false for boolean equality
+      }
       return operator === '!=' ? filterValue !== null : false
     }
 
-    // Convert values based on type
-    if (type === 'number') {
+    // Auto-detect type if not specified
+    if (!type) {
+      if (typeof itemValue === 'number') {
+        type = 'number';
+      } else if (typeof itemValue === 'boolean') {
+        type = 'boolean';
+      } else if (itemValue instanceof Date ||
+                (typeof itemValue === 'string' && !isNaN(Date.parse(itemValue)))) {
+        type = 'date';
+      }
+    }
+
+    // Special handling for ID fields
+    const isIdField = operator === '=' && (filterValue !== undefined) &&
+                     (String(itemValue).toLowerCase().includes('id') ||
+                      String(filterValue).toLowerCase().includes('id'));
+
+    // Check if both values are numeric strings or numbers
+    const bothNumeric = !isNaN(Number(itemValue)) && !isNaN(Number(filterValue));
+
+    // For ID fields, we need to be more careful with type conversion
+    if (isIdField) {
+      // If both are numeric, compare as numbers
+      if (bothNumeric) {
+        return Number(itemValue) === Number(filterValue);
+      }
+      // Otherwise compare as strings
+      return String(itemValue) === String(filterValue);
+    }
+
+    // Convert values based on type for non-ID fields
+    if (type === 'number' || (!type && bothNumeric && typeof itemValue !== 'string')) {
       itemValue = Number(itemValue)
       filterValue = Number(filterValue)
     } else if (type === 'date') {
       try {
+        // Normalize date strings to YYYY-MM-DD format
+        if (typeof itemValue === 'string') {
+          // Remove any time component and ensure YYYY-MM-DD format
+          itemValue = itemValue.split('T')[0].split(' ')[0]
+        }
+
         if (!(itemValue instanceof Date)) {
           itemValue = new Date(itemValue)
         }
+
+        if (typeof filterValue === 'string') {
+          // Remove any time component and ensure YYYY-MM-DD format
+          filterValue = filterValue.split('T')[0].split(' ')[0]
+        }
+
         if (!(filterValue instanceof Date)) {
           filterValue = new Date(filterValue)
         }
+
+        // Reset time components to compare dates only
+        itemValue.setHours(0, 0, 0, 0)
+        filterValue.setHours(0, 0, 0, 0)
+
+        console.log('Comparing dates:', {
+          itemValue,
+          filterValue,
+          itemValueStr: itemValue.toISOString(),
+          filterValueStr: filterValue.toISOString()
+        })
       } catch (e) {
         console.error('Error converting date values:', e)
         return false
       }
     } else if (type === 'boolean') {
-      if (typeof itemValue !== 'boolean') {
-        itemValue = String(itemValue).toLowerCase() === 'true'
+      // Convert itemValue to boolean - VERY IMPORTANT: use actual boolean values
+      let itemBoolValue: boolean;
+      if (typeof itemValue === 'boolean') {
+        // Already a boolean, use as is
+        itemBoolValue = itemValue;
+      } else if (typeof itemValue === 'string') {
+        // Convert string to boolean
+        const itemStr = String(itemValue).toLowerCase();
+        // Explicitly set to true or false
+        itemBoolValue = itemStr === 'true' || itemStr === 'yes' || itemStr === '1' || itemStr === 'y';
+      } else if (typeof itemValue === 'number') {
+        // Convert number to boolean
+        itemBoolValue = itemValue === 1;
+      } else {
+        // Default to false for null, undefined, or other types
+        itemBoolValue = false;
       }
-      if (typeof filterValue !== 'boolean') {
-        filterValue = String(filterValue).toLowerCase() === 'true'
+
+      // Convert filterValue to boolean - VERY IMPORTANT: use actual boolean values
+      let filterBoolValue: boolean;
+      if (typeof filterValue === 'boolean') {
+        // Already a boolean, use as is
+        filterBoolValue = filterValue;
+      } else if (typeof filterValue === 'string') {
+        // Convert string to boolean
+        const filterStr = String(filterValue).toLowerCase();
+        // Explicitly set to true or false
+        filterBoolValue = filterStr === 'true' || filterStr === 'yes' || filterStr === '1' || filterStr === 'y';
+      } else if (typeof filterValue === 'number') {
+        // Convert number to boolean
+        filterBoolValue = filterValue === 1;
+      } else {
+        // Default to false for null, undefined, or other types
+        filterBoolValue = false;
       }
+
+      console.log('Client comparing boolean values:', {
+        itemValue,
+        itemBoolValue,
+        filterValue,
+        filterBoolValue,
+        operator,
+        result: itemBoolValue === filterBoolValue,
+        strictEqual: Object.is(itemBoolValue, filterBoolValue),
+        itemValueType: typeof itemValue,
+        filterValueType: typeof filterValue,
+        itemBoolValueType: typeof itemBoolValue,
+        filterBoolValueType: typeof filterBoolValue
+      });
+
+      // For boolean values, we need to do an explicit comparison
+      // to handle both true and false values correctly
+      if (operator === '=') {
+        // Use strict equality for boolean comparison
+        const result = itemBoolValue === filterBoolValue;
+        console.log('Boolean equality result:', { itemBoolValue, filterBoolValue, result });
+        return result;
+      } else if (operator === '!=') {
+        // Use strict inequality for boolean comparison
+        const result = itemBoolValue !== filterBoolValue;
+        console.log('Boolean inequality result:', { itemBoolValue, filterBoolValue, result });
+        return result;
+      }
+
+      // If we get here, return false to continue with other comparisons
+      return false;
     }
 
     // Compare based on operator
@@ -311,6 +471,17 @@ export function useDatatable(config: TableConfig) {
         return String(itemValue).toLowerCase().startsWith(String(filterValue).toLowerCase())
       case 'endsWith':
         return String(itemValue).toLowerCase().endsWith(String(filterValue).toLowerCase())
+      case 'in':
+        // Handle array of values (for enum/status filters)
+        if (Array.isArray(filterValue)) {
+          // Convert both to lowercase strings for case-insensitive comparison
+          const itemValueStr = String(itemValue).toLowerCase()
+          return filterValue.some(val => String(val).toLowerCase() === itemValueStr)
+        } else if (filterValue) {
+          // Handle single value with 'in' operator (fallback)
+          return String(itemValue).toLowerCase() === String(filterValue).toLowerCase()
+        }
+        return false
       default:
         return itemValue === filterValue
     }
@@ -384,9 +555,61 @@ export function useDatatable(config: TableConfig) {
     // Filter params
     Object.entries(filters).forEach(([key, value]) => {
       if (typeof value === 'object') {
-        params.append(`filter[${key}]`, JSON.stringify(value))
+        // For object filters, convert values based on type
+        const processedFilter = { ...value };
+
+        // Auto-detect type if not specified in columns
+        const column = config.columns?.find(col => col.key === key);
+        const type = column?.type;
+
+        // Convert value based on detected type
+        if (processedFilter.value !== undefined) {
+          // Special handling for ID fields
+          const isIdField = key.toLowerCase().includes('id');
+          const isNumericValue = !isNaN(Number(processedFilter.value)) && typeof processedFilter.value !== 'boolean';
+
+          if (isIdField) {
+            // For ID fields, preserve the original type
+            // If it's a numeric string but the field is named 'id', we keep it as is
+            processedFilter.value = processedFilter.value;
+          } else if (type === 'number' || (!type && isNumericValue)) {
+            // For numeric fields, convert to number
+            processedFilter.value = Number(processedFilter.value);
+          } else if (type === 'boolean') {
+            // For boolean fields, ensure we have a proper boolean value
+            if (typeof processedFilter.value === 'string') {
+              const boolStr = processedFilter.value.toLowerCase();
+              // VERY IMPORTANT: Convert to actual boolean values, not string representations
+              processedFilter.value = boolStr === 'true' || boolStr === 'yes' || boolStr === '1' ? true : false;
+            } else if (processedFilter.value !== undefined) {
+              // Ensure it's a proper boolean
+              processedFilter.value = Boolean(processedFilter.value);
+            }
+            console.log('Sending boolean filter to server:', {
+              key,
+              value: processedFilter.value,
+              type: typeof processedFilter.value,
+              valueIsTrue: processedFilter.value === true,
+              valueIsFalse: processedFilter.value === false
+            });
+          }
+        }
+
+        params.append(`filter[${key}]`, JSON.stringify(processedFilter))
       } else {
-        params.append(`filter[${key}]`, String(value))
+        // For simple filters, try to convert to appropriate type
+        const column = config.columns?.find(col => col.key === key);
+        const isIdField = key.toLowerCase().includes('id');
+
+        if (isIdField) {
+          // For ID fields, preserve the original value
+          params.append(`filter[${key}]`, String(value))
+        } else if (column?.type === 'number' || (!isNaN(Number(value)) && typeof value !== 'boolean')) {
+          // Convert to number if it's a numeric string
+          params.append(`filter[${key}]`, String(Number(value)))
+        } else {
+          params.append(`filter[${key}]`, String(value))
+        }
       }
     })
 

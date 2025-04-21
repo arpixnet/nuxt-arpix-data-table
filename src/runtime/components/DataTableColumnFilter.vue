@@ -66,22 +66,63 @@
           </select>
           <input
             type="date"
-            v-model="filterValue"
+            v-model="dateFilterValue"
             class="arpix-data-table-filter-input"
-            @change="applyFilter"
+            @change="applyDateFilter"
           />
+          <div class="arpix-data-table-filter-date-info" v-if="dateFilterValue">
+            Selected date: {{ formatDateForDisplay(dateFilterValue) }}
+          </div>
         </div>
 
         <!-- Boolean filter -->
         <div v-else-if="column.type === 'boolean'" class="arpix-data-table-filter-group">
+          <div class="arpix-data-table-filter-radio-group">
+            <div class="arpix-data-table-filter-radio">
+              <input
+                type="radio"
+                id="filter-boolean-true"
+                name="boolean-filter"
+                value="true"
+                v-model="booleanValue"
+              />
+              <label for="filter-boolean-true">Yes</label>
+            </div>
+            <div class="arpix-data-table-filter-radio">
+              <input
+                type="radio"
+                id="filter-boolean-false"
+                name="boolean-filter"
+                value="false"
+                v-model="booleanValue"
+              />
+              <label for="filter-boolean-false">No</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Enum/Status filter (auto-detected) -->
+        <div v-else-if="column.enumValues || isEnumField" class="arpix-data-table-filter-group">
+          <div v-if="enumValues.length <= 3" class="arpix-data-table-filter-checkboxes">
+            <div v-for="value in enumValues" :key="value" class="arpix-data-table-filter-checkbox">
+              <input
+                type="checkbox"
+                :id="`filter-${column.key}-${value}`"
+                :value="value"
+                v-model="selectedEnumValues"
+                @change="onEnumValueChange"
+              />
+              <label :for="`filter-${column.key}-${value}`">{{ value }}</label>
+            </div>
+          </div>
           <select
+            v-else
             v-model="filterValue"
             class="arpix-data-table-filter-select"
-            @change="applyFilter"
+            @change="onSelectChange"
           >
             <option value="">-- Select --</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
+            <option v-for="value in enumValues" :key="value" :value="value">{{ value }}</option>
           </select>
         </div>
 
@@ -89,7 +130,7 @@
           <button
             class="arpix-data-table-filter-apply"
             @click.stop="applyFilter"
-            :disabled="!filterValue"
+            :disabled="!filterValue && selectedEnumValues.length === 0 && !dateFilterValue && !booleanValue"
           >
             Apply
           </button>
@@ -126,6 +167,45 @@ const emit = defineEmits<{
 const showFilterMenu = ref(false)
 const filterOperator = ref('contains')
 const filterValue = ref('')
+const dateFilterValue = ref('')
+const booleanValue = ref('')
+const selectedEnumValues = ref<string[]>([])
+
+// Enum values detection
+const isEnumField = computed(() => {
+  // Check if this is a field that should use enum filter (like status)
+  const key = props.column.key.toLowerCase()
+  return key === 'status' || key.includes('status') || key === 'state' || key === 'type' || key === 'category'
+})
+
+// Get possible enum values from active filters or detect from column configuration
+const enumValues = computed(() => {
+  // If column has predefined enum values, use those
+  if (props.column.enumValues && Array.isArray(props.column.enumValues)) {
+    return props.column.enumValues
+  }
+
+  // Try to detect enum values from the data
+  // This would typically be provided by the parent component
+  // For now, return some default values for common fields
+  if (isEnumField.value) {
+    const key = props.column.key.toLowerCase()
+    if (key === 'status' || key.includes('status')) {
+      // Common status values
+      if (key.includes('active')) {
+        return ['Active', 'Inactive']
+      } else {
+        return ['Active', 'Inactive', 'Pending', 'Completed', 'Cancelled']
+      }
+    } else if (key === 'type') {
+      return ['Type A', 'Type B', 'Type C']
+    } else if (key === 'category') {
+      return ['Category 1', 'Category 2', 'Category 3']
+    }
+  }
+
+  return []
+})
 
 // Methods
 const resetFilterValues = () => {
@@ -138,8 +218,44 @@ const resetFilterValues = () => {
     filterOperator.value = 'contains'
   }
 
-  // Clear filter value
+  // Clear filter values
   filterValue.value = ''
+  dateFilterValue.value = ''
+  booleanValue.value = ''
+
+  // Clear enum values
+  selectedEnumValues.value = []
+}
+
+// Format date for display
+const formatDateForDisplay = (dateStr: string) => {
+  try {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString()
+  } catch (e) {
+    return dateStr
+  }
+}
+
+// Apply date filter
+const applyDateFilter = () => {
+  if (!dateFilterValue.value) {
+    clearFilter()
+    return
+  }
+
+  // Create filter config for date
+  const filter: FilterConfig = {
+    field: props.column.key,
+    operator: filterOperator.value as any,
+    value: dateFilterValue.value // ISO format YYYY-MM-DD
+  }
+
+  // Emit filter update
+  emit('update:filter', props.column.key, filter)
+
+  // Close filter menu
+  showFilterMenu.value = false
 }
 
 // Computed
@@ -153,8 +269,27 @@ watch(() => props.activeFilters, (newFilters) => {
     const filter = newFilters[props.column.key]
 
     if (typeof filter === 'object') {
-      filterOperator.value = filter.operator || 'contains'
-      filterValue.value = filter.value || ''
+      // Handle enum/multiple values filter
+      if (filter.operator === 'in' && Array.isArray(filter.value)) {
+        selectedEnumValues.value = filter.value
+      } else {
+        // Handle regular filter
+        filterOperator.value = filter.operator || 'contains'
+
+        // Handle date filters
+        if (props.column.type === 'date' && filter.value) {
+          dateFilterValue.value = typeof filter.value === 'string' ? filter.value : ''
+        }
+        // Handle boolean filters
+        else if (props.column.type === 'boolean' && filter.value !== undefined) {
+          booleanValue.value = filter.value === true ? 'true' : 'false'
+          console.log('Setting boolean value from filter:', booleanValue.value)
+        }
+        // Handle other filters
+        else {
+          filterValue.value = filter.value || ''
+        }
+      }
     } else {
       filterOperator.value = '='
       filterValue.value = String(filter)
@@ -262,6 +397,77 @@ const updateMenuPosition = () => {
 };
 
 const applyFilter = () => {
+  // For boolean fields, use the booleanValue
+  if (props.column.type === 'boolean' && booleanValue.value !== '') {
+    // Convert string value to boolean - VERY IMPORTANT: this must be a real boolean, not a string
+    // Use explicit true/false values to ensure correct comparison
+    const boolValue = booleanValue.value === 'true' ? true : false
+
+    console.log('Boolean filter raw value:', booleanValue.value)
+    console.log('Boolean filter converted value:', boolValue)
+    console.log('Boolean filter type:', typeof boolValue)
+    console.log('Boolean filter is true?', boolValue === true)
+    console.log('Boolean filter is false?', boolValue === false)
+
+    // Create filter config with explicit boolean value
+    const filter: FilterConfig = {
+      field: props.column.key,
+      operator: '=',
+      value: boolValue
+    }
+
+    console.log('Applying boolean filter:', {
+      field: props.column.key,
+      value: boolValue,
+      valueType: typeof boolValue,
+      valueIsTrue: boolValue === true,
+      valueIsFalse: boolValue === false,
+      rawValue: booleanValue.value,
+      booleanValueType: typeof booleanValue.value
+    })
+
+    // Emit filter update
+    emit('update:filter', props.column.key, filter)
+
+    // Close filter menu
+    showFilterMenu.value = false
+    return
+  }
+
+  // For enum fields with checkboxes, use the selectedEnumValues
+  if ((props.column.enumValues || isEnumField.value)) {
+    if (selectedEnumValues.value.length > 0) {
+      // Create filter config for enum values with checkboxes (multiple selection)
+      const filter: FilterConfig = {
+        field: props.column.key,
+        operator: 'in', // New operator for multiple values
+        value: selectedEnumValues.value
+      }
+
+      // Emit filter update
+      emit('update:filter', props.column.key, filter)
+
+      // Close filter menu
+      showFilterMenu.value = false
+      return
+    } else if (filterValue.value) {
+      // Create filter config for enum values with select (single selection)
+      const filter: FilterConfig = {
+        field: props.column.key,
+        operator: '=', // Equals operator for single value
+        value: filterValue.value
+      }
+
+      // Emit filter update
+      emit('update:filter', props.column.key, filter)
+
+      // Close filter menu
+      showFilterMenu.value = false
+      return
+    }
+  }
+
+  // For other fields, use the filterValue
   if (!filterValue.value) {
     clearFilter()
     return
@@ -272,8 +478,6 @@ const applyFilter = () => {
   // Convert value based on column type
   if (props.column.type === 'number') {
     value = Number(value)
-  } else if (props.column.type === 'boolean') {
-    value = value === 'true'
   }
 
   // Create filter config
@@ -300,6 +504,20 @@ const clearFilter = () => {
   // Close filter menu
   showFilterMenu.value = false
 }
+
+// Handle changes in enum checkbox values
+const onEnumValueChange = () => {
+  console.log('Enum values changed:', selectedEnumValues.value)
+  // We don't apply the filter immediately, user needs to click Apply
+}
+
+// Handle changes in select dropdown
+const onSelectChange = () => {
+  console.log('Select value changed:', filterValue.value)
+  // We don't apply the filter immediately, user needs to click Apply
+}
+
+
 
 // Watch filter menu state changes
 watch(() => showFilterMenu.value, (newValue) => {
@@ -461,6 +679,69 @@ const handleClickOutside = (event: MouseEvent) => {
 .arpix-data-table-filter-clear:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* Checkbox styles for enum filters */
+.arpix-data-table-filter-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.arpix-data-table-filter-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.arpix-data-table-filter-checkbox input[type="checkbox"] {
+  margin: 0;
+}
+
+.arpix-data-table-filter-checkbox label {
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+/* Radio button styles for boolean filters */
+.arpix-data-table-filter-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.arpix-data-table-filter-radio {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.arpix-data-table-filter-radio input[type="radio"] {
+  margin: 0;
+}
+
+.arpix-data-table-filter-radio label {
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+/* Date filter styles */
+.arpix-data-table-filter-date-info {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #666;
+}
+
+/* Boolean filter actions */
+.boolean-filter-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.boolean-filter-actions .arpix-data-table-filter-clear {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
 }
 
 /* Dark theme adjustments */

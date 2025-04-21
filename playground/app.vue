@@ -15,6 +15,28 @@
     </div>
 
     <div class="example-section">
+      <h2 class="section-title">Alphanumeric IDs Example</h2>
+      <ArpixDataTable
+        :columns="alphaIdColumns"
+        :data-source="alphaIdData"
+      />
+      <div class="debug-info">
+        <p>Alphanumeric IDs: {{ alphaIdData.length }} items</p>
+      </div>
+    </div>
+
+    <div class="example-section">
+      <h2 class="section-title">Boolean Filter Example</h2>
+      <ArpixDataTable
+        :columns="booleanColumns"
+        :data-source="booleanData"
+      />
+      <div class="debug-info">
+        <p>Boolean Data: {{ booleanData.length }} items</p>
+      </div>
+    </div>
+
+    <div class="example-section">
       <h2 class="section-title">Server-side Example</h2>
       <ArpixDataTable
         :columns="serverColumns"
@@ -38,15 +60,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
 import type { TableColumn } from '../src/runtime/types'
 
 // Basic example data
 const basicColumns: TableColumn[] = [
-  { key: 'id', label: 'ID', sortable: true, width: '80px', filterable: true },
+  { key: 'id', label: 'ID', sortable: true, width: '110px', filterable: true },
   { key: 'name', label: 'Name', sortable: true, filterable: true },
   { key: 'email', label: 'Email', sortable: true, filterable: true },
-  { key: 'status', label: 'Status', sortable: true, filterable: true }
+  { key: 'status', label: 'Status', sortable: true, filterable: true, enumValues: ['Active', 'Inactive', 'Pending'], type: 'custom' },
 ]
 
 const basicData = [
@@ -54,22 +75,54 @@ const basicData = [
   { id: 2, name: 'Jane Smith', email: 'jane@example.com', status: 'Inactive' },
   { id: 3, name: 'Bob Johnson', email: 'bob@example.com', status: 'Active' },
   { id: 4, name: 'Alice Brown', email: 'alice@example.com', status: 'Pending' },
-  { id: 5, name: 'Charlie Wilson', email: 'charlie@example.com', status: 'Active' }
+  { id: 5, name: 'Charlie Wilson', email: 'charlie@example.com', status: 'Active' },
+]
+
+// Alphanumeric IDs example
+const alphaIdColumns: TableColumn[] = [
+  { key: 'id', label: 'ID', sortable: true, width: '110px', filterable: true },
+  { key: 'name', label: 'Name', sortable: true, filterable: true },
+  { key: 'category', label: 'Category', sortable: true, filterable: true },
+  { key: 'status', label: 'Status', sortable: true, filterable: true, enumValues: ['Active', 'Inactive'], type: 'custom' },
+]
+
+const alphaIdData = [
+  { id: 'A001', name: 'Product Alpha', category: 'Electronics', status: 'Active' },
+  { id: 'B002', name: 'Product Beta', category: 'Furniture', status: 'Active' },
+  { id: 'C003', name: 'Product Gamma', category: 'Clothing', status: 'Inactive' },
+  { id: 'D004', name: 'Product Delta', category: 'Electronics', status: 'Active' },
+  { id: '1005', name: 'Product Epsilon', category: 'Furniture', status: 'Inactive' },
+]
+
+// Boolean filter example
+const booleanColumns: TableColumn[] = [
+  { key: 'id', label: 'ID', sortable: true, width: '80px', filterable: true, type: 'number' },
+  { key: 'name', label: 'Name', sortable: true, filterable: true },
+  { key: 'active', label: 'Active', sortable: true, filterable: true, type: 'boolean' },
+  { key: 'verified', label: 'Verified', sortable: true, filterable: true, type: 'boolean' }
+]
+
+const booleanData = [
+  { id: 1, name: 'User One', active: true, verified: true },
+  { id: 2, name: 'User Two', active: true, verified: false },
+  { id: 3, name: 'User Three', active: false, verified: true },
+  { id: 4, name: 'User Four', active: false, verified: false },
+  { id: 5, name: 'User Five', active: true, verified: true }
 ]
 
 // Server-side example columns
 const serverColumns: TableColumn[] = [
-  { key: 'id', label: 'ID', sortable: true, width: '80px', filterable: true },
+  { key: 'id', label: 'ID', sortable: true, width: '110px', filterable: true, type: 'number' },
   { key: 'name', label: 'Name', sortable: true, filterable: true },
   { key: 'description', label: 'Description', filterable: true },
   { key: 'date', label: 'Date', sortable: true, type: 'date', filterable: true },
-  { key: 'status', label: 'Status', sortable: true, filterable: true },
-  { key: 'price', label: 'Price', sortable: true, type: 'number', filterable: true }
+  { key: 'status', label: 'Status', sortable: true, filterable: true, enumValues: ['active', 'inactive'], type: 'custom' },
+  { key: 'price', label: 'Price', sortable: true, type: 'number', filterable: true },
 ]
 
 // Advanced example with formatters
 const advancedColumns: TableColumn[] = [
-  { key: 'id', label: 'ID', sortable: true, width: '80px', filterable: true },
+  { key: 'id', label: 'ID', sortable: true, width: '110px', filterable: true, type: 'number' },
   { key: 'name', label: 'Name', sortable: true, filterable: true },
   {
     key: 'date',
@@ -78,7 +131,7 @@ const advancedColumns: TableColumn[] = [
     type: 'date',
     filterable: true,
     // Format function will be applied on client-side only
-    format: 'date-format'
+    format: 'date-format',
   },
   {
     key: 'amount',
@@ -87,7 +140,7 @@ const advancedColumns: TableColumn[] = [
     type: 'number',
     filterable: true,
     // Format function will be applied on client-side only
-    format: 'currency-format'
+    format: 'currency-format',
   },
   {
     key: 'status',
@@ -95,7 +148,9 @@ const advancedColumns: TableColumn[] = [
     sortable: true,
     filterable: true,
     // Format function will be applied on client-side only
-    format: 'status-format'
+    format: 'status-format',
+    type: 'custom',
+    enumValues: ['completed', 'pending', 'cancelled'],
   },
   {
     key: 'isActive',
@@ -103,8 +158,8 @@ const advancedColumns: TableColumn[] = [
     type: 'boolean',
     filterable: true,
     // Format function will be applied on client-side only
-    format: 'boolean-format'
-  }
+    format: 'boolean-format',
+  },
 ]
 
 const advancedData = [
@@ -114,7 +169,7 @@ const advancedData = [
     date: '2023-01-15',
     amount: 1250.99,
     status: 'completed',
-    isActive: true
+    isActive: true,
   },
   {
     id: 2,
@@ -122,7 +177,7 @@ const advancedData = [
     date: '2023-02-28',
     amount: 2340.50,
     status: 'pending',
-    isActive: true
+    isActive: true,
   },
   {
     id: 3,
@@ -130,7 +185,7 @@ const advancedData = [
     date: '2023-03-10',
     amount: 890.25,
     status: 'cancelled',
-    isActive: false
+    isActive: false,
   },
   {
     id: 4,
@@ -138,7 +193,7 @@ const advancedData = [
     date: '2023-04-05',
     amount: 1675.75,
     status: 'completed',
-    isActive: true
+    isActive: true,
   },
   {
     id: 5,
@@ -146,8 +201,8 @@ const advancedData = [
     date: '2023-05-20',
     amount: 3420.00,
     status: 'pending',
-    isActive: true
-  }
+    isActive: true,
+  },
 ]
 
 // Event handlers
