@@ -639,6 +639,7 @@ onMounted(async () => {
 .arpix-data-table-wrapper {
   overflow-x: auto;
   position: relative;
+  z-index: 1;
 }
 
 .arpix-data-table-table {

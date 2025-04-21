@@ -5,6 +5,7 @@
       @click.stop="toggleFilterMenu($event)"
       :class="{ 'active': isActive }"
       :title="isActive ? 'Filter active' : 'Filter column'"
+      ref="filterButton"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
@@ -12,7 +13,7 @@
     </button>
 
     <teleport to="body">
-      <div v-if="showFilterMenu" class="arpix-data-table-filter-menu">
+      <div v-if="showFilterMenu" class="arpix-data-table-filter-menu" :style="menuStyle">
       <div class="arpix-data-table-filter-header">
         <span>Filter: {{ column.label }}</span>
         <button class="arpix-data-table-filter-close" @click.stop="toggleFilterMenu($event)">×</button>
@@ -101,13 +102,13 @@
           </button>
         </div>
       </div>
-      </div>
+    </div>
     </teleport>
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, reactive } from 'vue'
 import type { TableColumn, FilterConfig } from '../types'
 
 // Define props
@@ -166,21 +167,99 @@ watch(() => props.activeFilters, (newFilters) => {
   }
 }, { deep: true, immediate: true })
 
+// Global registry for open filter menus
+const openFilterMenus = new Set<string>();
+
+// Generate a unique ID for this filter instance
+const filterId = `filter-${Math.random().toString(36).substring(2, 11)}`;
+
+// Reference to the filter button element
+const filterButton = ref<HTMLElement | null>(null);
+
+// Menu position and style
+const menuStyle = reactive({
+  position: 'fixed',
+  top: '0px',
+  left: '0px',
+  zIndex: '9999'
+});
+
+// Close all other filter menus
+const closeOtherFilterMenus = () => {
+  // Create a custom event to notify other filters to close
+  const event = new CustomEvent('close-filter-menus', {
+    detail: { exceptId: filterId }
+  });
+  document.dispatchEvent(event);
+};
+
+// Listen for close events from other filters
+onMounted(() => {
+  document.addEventListener('close-filter-menus', ((event: CustomEvent) => {
+    // Close this filter menu if it's not the one that should stay open
+    if (event.detail.exceptId !== filterId) {
+      showFilterMenu.value = false;
+    }
+  }) as EventListener);
+});
+
+// Clean up event listener on unmount
+onUnmounted(() => {
+  document.removeEventListener('close-filter-menus', (() => {}) as EventListener);
+});
+
+// Toggle filter menu
 const toggleFilterMenu = (event: Event) => {
   // Prevent event propagation
-  event.stopPropagation()
-  event.preventDefault()
+  event.stopPropagation();
+  event.preventDefault();
 
-  // Toggle filter menu
-  showFilterMenu.value = !showFilterMenu.value
+  // If this filter is already open, close it
+  if (showFilterMenu.value) {
+    showFilterMenu.value = false;
+    return;
+  }
 
-  console.log('Toggle filter menu:', showFilterMenu.value)
+  // Close all other filter menus
+  closeOtherFilterMenus();
 
-  // Force a DOM update
+  // Open this filter menu
+  showFilterMenu.value = true;
+
+  // Position the menu after DOM update
   setTimeout(() => {
-    console.log('Filter menu state after timeout:', showFilterMenu.value)
-  }, 0)
-}
+    updateMenuPosition();
+  }, 10);
+};
+
+// Update menu position based on button position
+const updateMenuPosition = () => {
+  if (!filterButton.value) return;
+
+  const buttonRect = filterButton.value.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  // Default position is below the button
+  let top = buttonRect.bottom + 5;
+  let left = buttonRect.left;
+
+  // Check if menu would go off the right edge of the screen
+  if (left + 280 > viewportWidth - 20) {
+    left = Math.max(20, viewportWidth - 280 - 20);
+  }
+
+  // Check if menu would go off the bottom of the screen
+  // We'll estimate the menu height as 300px if we can't measure it yet
+  if (top + 300 > viewportHeight - 20) {
+    // Position above the button instead
+    top = Math.max(20, buttonRect.top - 300 - 5);
+  }
+
+  // Update menu style
+  menuStyle.top = `${top}px`;
+  menuStyle.left = `${left}px`;
+};
 
 const applyFilter = () => {
   if (!filterValue.value) {
@@ -188,7 +267,7 @@ const applyFilter = () => {
     return
   }
 
-  let value = filterValue.value
+  let value: any = filterValue.value
 
   // Convert value based on column type
   if (props.column.type === 'number') {
@@ -222,10 +301,37 @@ const clearFilter = () => {
   showFilterMenu.value = false
 }
 
-// Log filter menu state for debugging
+// Watch filter menu state changes
 watch(() => showFilterMenu.value, (newValue) => {
-  console.log('Filter menu state changed:', newValue)
+  console.log(`Filter ${filterId} menu state changed:`, newValue)
+
+  // Add or remove click outside handler
+  if (newValue) {
+    // Add click outside handler after a short delay to prevent immediate closing
+    setTimeout(() => {
+      document.addEventListener('click', handleClickOutside)
+      // Update position in case of window resize
+      window.addEventListener('resize', updateMenuPosition)
+    }, 100)
+  } else {
+    document.removeEventListener('click', handleClickOutside)
+    window.removeEventListener('resize', updateMenuPosition)
+  }
 })
+
+// Close filter menu when clicking outside
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+
+  // Check if click is inside this filter's button or menu
+  const isClickInsideButton = filterButton.value?.contains(target);
+  const isClickInsideMenu = target.closest('.arpix-data-table-filter-menu');
+
+  if (!isClickInsideButton && !isClickInsideMenu) {
+    console.log('Click outside, closing filter menu');
+    showFilterMenu.value = false;
+  }
+}
 </script>
 
 <style>
@@ -233,8 +339,7 @@ watch(() => showFilterMenu.value, (newValue) => {
   position: relative;
   display: inline-block;
   margin-left: 0.5rem;
-  z-index: 1000;
-  overflow: visible;
+  z-index: 10;
 }
 
 .arpix-data-table-filter-button {
@@ -261,19 +366,13 @@ watch(() => showFilterMenu.value, (newValue) => {
 }
 
 .arpix-data-table-filter-menu {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 9999;
   width: 280px;
   background-color: white;
   border: 1px solid #ccc;
   border-radius: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  display: block !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .arpix-data-table-filter-header {
