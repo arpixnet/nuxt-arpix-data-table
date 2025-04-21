@@ -126,13 +126,50 @@ const formatCellValue = (item: any, column: TableColumn) => {
   const value = getCellValue(item, column)
 
   // Use custom formatter if provided
-  if (column.format && typeof column.format === 'function') {
-    return column.format(value, item)
+  if (column.format) {
+    try {
+      // Check if format is a function
+      if (typeof column.format === 'function') {
+        return column.format(value, item)
+      }
+
+      // Handle predefined format strings
+      if (typeof column.format === 'string') {
+        switch (column.format) {
+          case 'date-format':
+            return new Date(value).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })
+          case 'currency-format':
+            return `$${Number(value).toFixed(2)}`
+          case 'status-format':
+            const statusClasses: Record<string, string> = {
+              completed: 'status-completed',
+              pending: 'status-pending',
+              cancelled: 'status-cancelled'
+            }
+            return `<span class="status-badge ${statusClasses[value] || ''}">${value}</span>`
+          case 'boolean-format':
+            return value
+              ? '<span class="status-active">✓</span>'
+              : '<span class="status-inactive">✗</span>'
+        }
+      }
+    } catch (error) {
+      console.error(`Error formatting column ${column.key}:`, error)
+    }
   }
 
   // Default formatting based on column type
   if (column.type === 'date' && value) {
-    return new Date(value).toLocaleDateString()
+    try {
+      return new Date(value).toLocaleDateString()
+    } catch (e) {
+      console.error(`Error formatting date for column ${column.key}:`, e)
+      return value
+    }
   }
 
   if (column.type === 'boolean') {
@@ -173,6 +210,10 @@ const handleCellClick = (value: any, key: string, row: any) => {
 .arpix-data-table-cell {
   padding: 0.75rem 1rem;
   vertical-align: middle;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .arpix-data-table-selection-cell {

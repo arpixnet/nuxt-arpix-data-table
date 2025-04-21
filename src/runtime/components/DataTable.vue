@@ -49,13 +49,25 @@
     <!-- Main Table -->
     <div class="arpix-data-table-wrapper">
       <table class="arpix-data-table-table">
+        <!-- Column definitions -->
+        <colgroup>
+          <col v-if="selectable" style="width: 40px;" />
+          <col v-for="column in visibleColumns" :key="column.key" :style="getColumnStyle(column)" />
+        </colgroup>
+
         <!-- Table Header -->
         <thead v-if="showHeader">
-          <slot name="header" :columns="visibleColumns" :sort="sort" :onSort="handleSort">
+          <slot name="header" :columns="visibleColumns" :sort="sort" :filters="state?.filters || {}" :onSort="handleSort" :onFilterUpdate="handleFilterUpdate">
             <ArpixDataTableHeader
               :columns="visibleColumns"
               :sort="sort"
+              :filters="state?.filters || {}"
+              :selectable="selectable"
+              :selected="selected"
+              :items="displayItems"
               @sort="handleSort"
+              @select-all="handleSelectAll"
+              @update:filters="handleFilterUpdate"
             />
           </slot>
         </thead>
@@ -150,7 +162,7 @@
 </template>
 
 <script lang="ts" setup>
-import { computed, ref, watch, onMounted, useSlots } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import { useNuxtApp } from '#app'
 import { useDatatable } from '../composables'
 import type {
@@ -193,7 +205,7 @@ const props = withDefaults(defineProps<{
   initialPage?: number
 }>(), {
   perPage: () => useNuxtApp().$arpixDataTable.config.perPage || 10,
-  pagination: () => useNuxtApp().$arpixDataTable.config.paginationType || 'client',
+  pagination: 'client',
   searchable: () => useNuxtApp().$arpixDataTable.config.searchable || true,
   selectable: false,
   tableClass: '',
@@ -216,6 +228,7 @@ const emit = defineEmits<{
   'page-change': [page: number]
   'sort-change': [sort: SortConfig]
   'search-change': [query: string]
+  'filter-change': [filters: Record<string, any>]
   'selection-change': [selected: any[]]
   'row-click': [row: any, index: number]
   'cell-click': [value: any, key: string, row: any]
@@ -242,7 +255,8 @@ const tableConfig: TableConfig = {
   loading: props.loading,
   error: props.error,
   noDataText: props.noDataText,
-  initialSort: props.initialSort
+  initialSort: props.initialSort,
+  filters: props.initialFilters || {}
 }
 
 // Log the table configuration
@@ -256,6 +270,7 @@ const {
   setPage,
   setSort,
   setSearch,
+  setFilters,
   setSelected,
   getDisplayItems
 } = useDatatable(tableConfig)
@@ -284,17 +299,18 @@ const debug = computed(() => {
     dataSourceType: typeof props.dataSource,
     isArray: Array.isArray(props.dataSource),
     dataLength: Array.isArray(props.dataSource) ? props.dataSource.length : 0,
-    stateItems: state.value.items.length,
+    stateItems: state.value?.items?.length || 0,
     displayItems: displayItems.value ? displayItems.value.length : 0,
     firstItem: Array.isArray(props.dataSource) && props.dataSource.length > 0 ? props.dataSource[0] : null,
     searchQuery: searchQuery.value,
-    stateSearchQuery: state.value.searchQuery,
+    stateSearchQuery: state.value?.searchQuery || '',
     searchable: props.searchable,
     sort: sort.value,
+    filters: state.value?.filters || {},
     columns: visibleColumns.value.map(col => ({ key: col.key, sortable: col.sortable })),
-    pagination: state.value.pagination,
-    loading: state.value.loading,
-    error: state.value.error,
+    pagination: state.value?.pagination || { page: 1, perPage: props.perPage || 10, total: 0 },
+    loading: state.value?.loading || false,
+    error: state.value?.error || null,
     dataSource: props.dataSource,
     paginationType: props.pagination
   }
@@ -304,6 +320,17 @@ const debug = computed(() => {
 const visibleColumns = computed(() =>
   props.columns.filter((col: TableColumn) => col.visible !== false)
 )
+
+// Get column style
+const getColumnStyle = (column: TableColumn) => {
+  const style: Record<string, string> = {}
+
+  if (column.width) {
+    style.width = column.width
+  }
+
+  return style
+}
 
 const themeStyles = computed(() => {
   const styles: Record<string, string> = {}
@@ -412,17 +439,59 @@ const clearSearch = () => {
   emit('search-change', '')
 }
 
+// Handle filter updates from the header
+const handleFilterUpdate = (filters: Record<string, any>) => {
+  console.log('Filter update:', filters)
+
+  // Make sure state is initialized before updating filters
+  if (state?.value) {
+    setFilters(filters)
+    emit('filter-change', filters)
+
+    // Reset to first page when filters change
+    if (pagination.value?.page !== 1) {
+      setPage(1)
+    }
+  } else {
+    console.warn('Cannot update filters: state is not initialized yet')
+  }
+}
+
+// Handle select all checkbox
+const handleSelectAll = (checked: boolean) => {
+  if (!state?.value) {
+    console.warn('Cannot select items: state is not initialized yet')
+    return
+  }
+
+  if (checked) {
+    // Select all items
+    setSelected(displayItems.value || [])
+  } else {
+    // Deselect all items
+    setSelected([])
+  }
+
+  emit('selection-change', state.value.selected || [])
+}
+
 // Initialize
 onMounted(async () => {
   console.log('DataTable mounted, initializing with dataSource:', props.dataSource)
 
   // Set initial state
-  if (props.initialSort) {
+  if (state?.value && props.initialSort) {
     setSort(props.initialSort)
   }
 
-  if (props.initialPage && props.initialPage > 1) {
+  if (state?.value && props.initialPage && props.initialPage > 1) {
     setPage(props.initialPage)
+  }
+
+  // Make sure state is initialized
+  if (!state?.value) {
+    console.error('State is not initialized yet')
+    return
   }
 
   // Direct assignment for array data sources to ensure data is loaded
@@ -446,8 +515,13 @@ onMounted(async () => {
   }
 
   // Initialize search if needed
-  if (searchQuery.value) {
+  if (state?.value && searchQuery.value) {
     setSearch(searchQuery.value)
+  }
+
+  // Initialize filters if provided
+  if (state?.value && props.initialFilters) {
+    setFilters(props.initialFilters)
   }
 })
 </script>
@@ -564,12 +638,14 @@ onMounted(async () => {
 
 .arpix-data-table-wrapper {
   overflow-x: auto;
+  position: relative;
 }
 
 .arpix-data-table-table {
   width: 100%;
   border-collapse: collapse;
-  table-layout: auto;
+  table-layout: fixed;
+  border-spacing: 0;
 }
 
 .arpix-data-table-loading-cell,
@@ -633,6 +709,37 @@ onMounted(async () => {
   border-top: 1px solid var(--arpix-border-color);
   display: flex;
   justify-content: center;
+}
+
+/* Ensure consistent cell widths */
+.arpix-data-table-table th,
+.arpix-data-table-table td {
+  box-sizing: border-box;
+  width: auto;
+  text-align: left;
+}
+
+/* Set width for specific columns */
+.arpix-data-table-table th[style*="width"],
+.arpix-data-table-table td[style*="width"] {
+  min-width: auto;
+  max-width: none;
+}
+
+/* Ensure column alignment */
+.arpix-data-table-table colgroup {
+  display: table-column-group;
+}
+
+.arpix-data-table-table col {
+  display: table-column;
+}
+
+/* Selection cell has fixed width */
+.arpix-data-table-selection-cell {
+  width: 40px !important;
+  min-width: 40px !important;
+  max-width: 40px !important;
 }
 
 /* Theme: default - styles already defined in base styles */

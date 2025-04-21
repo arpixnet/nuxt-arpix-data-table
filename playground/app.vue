@@ -77,11 +77,8 @@ const advancedColumns: TableColumn[] = [
     sortable: true,
     type: 'date',
     filterable: true,
-    format: (value) => new Date(value).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+    // Format function will be applied on client-side only
+    format: 'date-format'
   },
   {
     key: 'amount',
@@ -89,33 +86,24 @@ const advancedColumns: TableColumn[] = [
     sortable: true,
     type: 'number',
     filterable: true,
-    format: (value) => `$${value.toFixed(2)}`
+    // Format function will be applied on client-side only
+    format: 'currency-format'
   },
   {
     key: 'status',
     label: 'Status',
     sortable: true,
     filterable: true,
-    format: (value: string, _row) => {
-      const statusClasses: Record<string, string> = {
-        completed: 'status-completed',
-        pending: 'status-pending',
-        cancelled: 'status-cancelled'
-      }
-
-      return `<span class="status-badge ${statusClasses[value] || ''}">${value}</span>`
-    }
+    // Format function will be applied on client-side only
+    format: 'status-format'
   },
   {
     key: 'isActive',
     label: 'Active',
     type: 'boolean',
     filterable: true,
-    format: (value: boolean) => {
-      return value
-        ? '<span class="status-active">✓</span>'
-        : '<span class="status-inactive">✗</span>'
-    }
+    // Format function will be applied on client-side only
+    format: 'boolean-format'
   }
 ]
 
@@ -211,7 +199,7 @@ body {
 .basic-table {
   --arpix-primary-color: #4f46e5;
   --arpix-border-color: #e5e7eb;
-  --arpix-header-background: #f3f4f6;
+  --arpix-header-background: #d9dd00;
 }
 
 /* Debug info styles */

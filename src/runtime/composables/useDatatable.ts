@@ -59,13 +59,19 @@ export function useDatatable(config: TableConfig) {
           data = processClientData(data)
         }
       } else if (typeof config.dataSource === 'function') {
-        // Function data source
-        data = await config.dataSource({
-          pagination: state.value.pagination,
-          sort: state.value.sort,
-          filters: state.value.filters,
-          search: state.value.searchQuery
-        })
+        // Function data source (client-side only)
+        try {
+          // @ts-ignore - We know this is a function, but TypeScript doesn't because we removed it from the type definition
+          data = await config.dataSource({
+            pagination: state.value.pagination,
+            sort: state.value.sort,
+            filters: state.value.filters,
+            search: state.value.searchQuery
+          })
+        } catch (error) {
+          console.error('Error calling function data source:', error)
+          data = []
+        }
       } else if (typeof config.dataSource === 'string') {
         // URL data source (API endpoint)
         const apiResponse = await fetchFromApi(config.dataSource)
@@ -223,44 +229,92 @@ export function useDatatable(config: TableConfig) {
    * Apply filters to data
    */
   const applyFilters = (data: any[], filters: FilterSet): any[] => {
+    console.log('Applying filters:', filters)
+
+    if (!filters || Object.keys(filters).length === 0) {
+      return data
+    }
+
     return data.filter(item => {
       return Object.entries(filters).every(([key, filter]) => {
         // Skip empty filters
         if (!filter || (typeof filter === 'object' && !filter.value)) return true
 
+        // Get column definition to determine type
+        const column = config.columns?.find(col => col.key === key)
+
         // Handle simple filters (key: value)
         if (typeof filter !== 'object') {
-          return item[key] === filter
+          return compareValues(item[key], filter, '=', column?.type)
         }
 
         // Handle complex filters
         const { field, operator, value } = filter
-        const itemValue = item[field]
+        const itemValue = item[field || key]
 
-        switch (operator) {
-          case '=':
-            return itemValue === value
-          case '!=':
-            return itemValue !== value
-          case '>':
-            return itemValue > value
-          case '>=':
-            return itemValue >= value
-          case '<':
-            return itemValue < value
-          case '<=':
-            return itemValue <= value
-          case 'contains':
-            return String(itemValue).toLowerCase().includes(String(value).toLowerCase())
-          case 'startsWith':
-            return String(itemValue).toLowerCase().startsWith(String(value).toLowerCase())
-          case 'endsWith':
-            return String(itemValue).toLowerCase().endsWith(String(value).toLowerCase())
-          default:
-            return itemValue === value
-        }
+        return compareValues(itemValue, value, operator, column?.type)
       })
     })
+  }
+
+  /**
+   * Compare values based on operator and type
+   */
+  const compareValues = (itemValue: any, filterValue: any, operator: string, type?: string): boolean => {
+    // Handle null/undefined values
+    if (itemValue === null || itemValue === undefined) {
+      return operator === '!=' ? filterValue !== null : false
+    }
+
+    // Convert values based on type
+    if (type === 'number') {
+      itemValue = Number(itemValue)
+      filterValue = Number(filterValue)
+    } else if (type === 'date') {
+      try {
+        if (!(itemValue instanceof Date)) {
+          itemValue = new Date(itemValue)
+        }
+        if (!(filterValue instanceof Date)) {
+          filterValue = new Date(filterValue)
+        }
+      } catch (e) {
+        console.error('Error converting date values:', e)
+        return false
+      }
+    } else if (type === 'boolean') {
+      if (typeof itemValue !== 'boolean') {
+        itemValue = String(itemValue).toLowerCase() === 'true'
+      }
+      if (typeof filterValue !== 'boolean') {
+        filterValue = String(filterValue).toLowerCase() === 'true'
+      }
+    }
+
+    // Compare based on operator
+    switch (operator) {
+      case '=':
+        return itemValue === filterValue
+      case '!=':
+        return itemValue !== filterValue
+      case '>':
+        return itemValue > filterValue
+      case '>=':
+        return itemValue >= filterValue
+      case '<':
+        return itemValue < filterValue
+      case '<=':
+        return itemValue <= filterValue
+      case 'contains':
+        return String(itemValue).toLowerCase().includes(String(filterValue).toLowerCase())
+      case 'startsWith':
+        return String(itemValue).toLowerCase().startsWith(String(filterValue).toLowerCase())
+      case 'endsWith':
+        return String(itemValue).toLowerCase().endsWith(String(filterValue).toLowerCase())
+      default:
+        return itemValue === filterValue
+    }
+
   }
 
   /**
@@ -516,14 +570,21 @@ export function useDatatable(config: TableConfig) {
    * Set filters
    */
   const setFilters = (filters: FilterSet) => {
+    console.log('Setting filters:', filters)
     state.value.filters = filters
     state.value.pagination.page = 1 // Reset to first page
 
     // Reload data if using server pagination
     if (config.pagination === 'server') {
       loadData()
+    } else if (Array.isArray(state.value.items) && state.value.items.length > 0) {
+      // For client-side filtering, we don't need to reload data
+      // The displayItems computed property will automatically update
+      console.log('Client-side filtering applied')
     }
   }
+
+
 
   /**
    * Set selected rows
