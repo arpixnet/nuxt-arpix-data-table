@@ -6,7 +6,7 @@
         {{ startItem }}-{{ endItem }} of {{ pagination.total }}
       </span>
     </div>
-    
+
     <!-- Page Size Selector -->
     <div class="arpix-data-table-pagination-size" v-if="showPageSizeSelector">
       <select v-model="pageSize" class="arpix-data-table-pagination-size-select">
@@ -15,11 +15,11 @@
         </option>
       </select>
     </div>
-    
+
     <!-- Page Controls -->
     <div class="arpix-data-table-pagination-controls">
       <!-- First Page -->
-      <button 
+      <button
         class="arpix-data-table-pagination-button"
         :disabled="isFirstPage"
         @click="goToFirstPage"
@@ -30,9 +30,9 @@
           <path d="m18 17-5-5 5-5"/>
         </svg>
       </button>
-      
+
       <!-- Previous Page -->
-      <button 
+      <button
         class="arpix-data-table-pagination-button"
         :disabled="isFirstPage"
         @click="goToPreviousPage"
@@ -42,22 +42,32 @@
           <path d="m15 18-6-6 6-6"/>
         </svg>
       </button>
-      
+
       <!-- Page Numbers -->
       <div class="arpix-data-table-pagination-pages">
-        <button 
-          v-for="page in visiblePages" 
-          :key="page"
-          class="arpix-data-table-pagination-page"
-          :class="{ 'arpix-data-table-pagination-page-active': page === pagination.page }"
-          @click="goToPage(page)"
-        >
-          {{ page }}
-        </button>
+        <template v-for="(page, index) in visiblePages" :key="index">
+          <!-- Ellipsis -->
+          <span
+            v-if="page === '...'"
+            class="arpix-data-table-pagination-ellipsis"
+          >
+            &hellip;
+          </span>
+
+          <!-- Page number -->
+          <button
+            v-else
+            class="arpix-data-table-pagination-page"
+            :class="{ 'arpix-data-table-pagination-page-active': page === pagination.page }"
+            @click="goToPage(Number(page))"
+          >
+            {{ page }}
+          </button>
+        </template>
       </div>
-      
+
       <!-- Next Page -->
-      <button 
+      <button
         class="arpix-data-table-pagination-button"
         :disabled="isLastPage"
         @click="goToNextPage"
@@ -67,9 +77,9 @@
           <path d="m9 18 6-6-6-6"/>
         </svg>
       </button>
-      
+
       <!-- Last Page -->
-      <button 
+      <button
         class="arpix-data-table-pagination-button"
         :disabled="isLastPage"
         @click="goToLastPage"
@@ -126,37 +136,56 @@ const endItem = computed(() => {
 const visiblePages = computed(() => {
   const total = totalPages.value
   const current = props.pagination.page
-  const delta = 2
-  const range = []
-  
-  // Always show first page
-  range.push(1)
-  
-  // Calculate start and end of range
-  const rangeStart = Math.max(2, current - delta)
-  const rangeEnd = Math.min(total - 1, current + delta)
-  
-  // Add ellipsis if needed
+
+  // For small number of pages, show all pages
+  if (total <= 7) {
+    return Array.from({ length: total }, (_, i) => i + 1)
+  }
+
+  // For larger number of pages, show a limited range with ellipsis
+  const result: (number | string)[] = []
+
+  // Always include first page
+  result.push(1)
+
+  // Determine the range of pages to show around current page
+  let rangeStart = 0, rangeEnd = 0
+
+  if (current <= 3) {
+    // If current page is near the beginning
+    rangeStart = 2
+    rangeEnd = 5
+  } else if (current >= total - 2) {
+    // If current page is near the end
+    rangeStart = total - 4
+    rangeEnd = total - 1
+  } else {
+    // Current page is in the middle
+    rangeStart = current - 1
+    rangeEnd = current + 1
+  }
+
+  // Add ellipsis before range if needed
   if (rangeStart > 2) {
-    range.push(-1) // Represents ellipsis
+    result.push('...')
   }
-  
-  // Add range pages
+
+  // Add the range of pages
   for (let i = rangeStart; i <= rangeEnd; i++) {
-    range.push(i)
+    result.push(i)
   }
-  
-  // Add ellipsis if needed
+
+  // Add ellipsis after range if needed
   if (rangeEnd < total - 1) {
-    range.push(-2) // Represents ellipsis
+    result.push('...')
   }
-  
-  // Always show last page if not the first page
+
+  // Always include last page if not the first page
   if (total > 1) {
-    range.push(total)
+    result.push(total)
   }
-  
-  return range
+
+  return result
 })
 
 // Methods
@@ -193,6 +222,35 @@ watch(pageSize, (newSize) => {
   align-items: center;
   justify-content: space-between;
   font-size: 0.875rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .arpix-data-table-pagination {
+    justify-content: center;
+    padding: 0 0.5rem;
+  }
+
+  .arpix-data-table-pagination-info {
+    width: 100%;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .arpix-data-table-pagination-controls {
+    margin: 0 auto;
+    padding: 0.5rem 0;
+  }
+
+  .arpix-data-table-pagination-button,
+  .arpix-data-table-pagination-page,
+  .arpix-data-table-pagination-ellipsis {
+    margin: 0 0.25rem;
+    min-width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1rem;
+  }
 }
 
 .arpix-data-table-pagination-info {
@@ -212,6 +270,7 @@ watch(pageSize, (newSize) => {
   display: flex;
   align-items: center;
   gap: 0.25rem;
+  padding: 0.25rem;
 }
 
 .arpix-data-table-pagination-button {
@@ -273,5 +332,15 @@ watch(pageSize, (newSize) => {
 
 .arpix-data-table-pagination-page-active:hover {
   background-color: var(--arpix-primary-color);
+}
+
+.arpix-data-table-pagination-ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  color: var(--arpix-secondary-color);
 }
 </style>
