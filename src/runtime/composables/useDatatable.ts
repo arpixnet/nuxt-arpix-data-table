@@ -187,9 +187,29 @@ export function useDatatable(config: TableConfig) {
       return data
     }
 
-    // Get columns that can be searched (not explicitly set to filterable: false)
-    const searchableColumns = config.columns.filter(col => col.filterable !== false)
-    console.log('Searchable columns:', searchableColumns.map(col => col.key))
+    // Get columns that can be searched (text fields only, not explicitly set to filterable: false)
+    const searchableColumns = config.columns.filter(col => {
+      // Skip columns that are explicitly set to not filterable
+      if (col.filterable === false) return false;
+
+      // Skip columns with specific types that are not text
+      if (col.type === 'number' || col.type === 'boolean' || col.type === 'date') return false;
+
+      // Include all other columns (assumed to be text/string)
+      return true;
+    });
+
+    // Log which columns are searchable and which are excluded
+    const excludedColumns = config.columns.filter(col => {
+      // Skip columns that are already not filterable
+      if (col.filterable === false) return false;
+
+      // Include columns with specific types that are not text
+      return col.type === 'number' || col.type === 'boolean' || col.type === 'date';
+    });
+
+    console.log('Searchable columns (text only):', searchableColumns.map(col => col.key));
+    console.log('Excluded columns from search:', excludedColumns.map(col => `${col.key} (${col.type})`));
 
     if (searchableColumns.length === 0) {
       console.warn('No searchable columns found. Make sure columns have filterable: true')
@@ -211,6 +231,35 @@ export function useDatatable(config: TableConfig) {
         // Get value from item
         const value = item[column.key]
         if (value === null || value === undefined) return false
+
+        // Skip if the value appears to be a non-string type
+        if (typeof value === 'number' || typeof value === 'boolean') {
+          console.log(`Skipping search in column ${column.key}: value is ${typeof value}`, value);
+          return false;
+        }
+        if (value instanceof Date) {
+          console.log(`Skipping search in column ${column.key}: value is Date`, value);
+          return false;
+        }
+
+        // Skip if the value looks like a date string
+        if (typeof value === 'string' && !isNaN(Date.parse(value))) {
+          // Check if it matches common date formats
+          if (/^\d{4}-\d{2}-\d{2}/.test(value) || // ISO format
+              /^\d{2}[\/-]\d{2}[\/-]\d{4}/.test(value)) { // MM/DD/YYYY or DD/MM/YYYY
+            console.log(`Skipping search in column ${column.key}: value looks like a date`, value);
+            return false;
+          }
+        }
+
+        // Skip if the value is a numeric string
+        if (typeof value === 'string' && !isNaN(Number(value)) && value.trim() !== '') {
+          // Only skip if it's a pure number (no letters)
+          if (/^-?\d+(\.\d+)?$/.test(value)) {
+            console.log(`Skipping search in column ${column.key}: value is numeric string`, value);
+            return false;
+          }
+        }
 
         // Convert to string and check if it includes the query
         try {
