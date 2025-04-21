@@ -9,6 +9,9 @@
         :data-source="basicData"
         table-class="basic-table"
       />
+      <div class="debug-info">
+        <p>Basic Data: {{ basicData.length }} items</p>
+      </div>
     </div>
 
     <div class="example-section">
@@ -40,10 +43,10 @@ import type { TableColumn } from '../src/runtime/types'
 
 // Basic example data
 const basicColumns: TableColumn[] = [
-  { key: 'id', label: 'ID', sortable: true, width: '80px' },
+  { key: 'id', label: 'ID', sortable: true, width: '80px', filterable: true },
   { key: 'name', label: 'Name', sortable: true, filterable: true },
-  { key: 'email', label: 'Email', sortable: true },
-  { key: 'status', label: 'Status', sortable: true }
+  { key: 'email', label: 'Email', sortable: true, filterable: true },
+  { key: 'status', label: 'Status', sortable: true, filterable: true }
 ]
 
 const basicData = [
@@ -56,23 +59,24 @@ const basicData = [
 
 // Server-side example columns
 const serverColumns: TableColumn[] = [
-  { key: 'id', label: 'ID', sortable: true, width: '80px' },
+  { key: 'id', label: 'ID', sortable: true, width: '80px', filterable: true },
   { key: 'name', label: 'Name', sortable: true, filterable: true },
-  { key: 'description', label: 'Description' },
-  { key: 'date', label: 'Date', sortable: true, type: 'date' },
-  { key: 'status', label: 'Status', sortable: true },
-  { key: 'price', label: 'Price', sortable: true, type: 'number' }
+  { key: 'description', label: 'Description', filterable: true },
+  { key: 'date', label: 'Date', sortable: true, type: 'date', filterable: true },
+  { key: 'status', label: 'Status', sortable: true, filterable: true },
+  { key: 'price', label: 'Price', sortable: true, type: 'number', filterable: true }
 ]
 
 // Advanced example with formatters
 const advancedColumns: TableColumn[] = [
-  { key: 'id', label: 'ID', sortable: true, width: '80px' },
+  { key: 'id', label: 'ID', sortable: true, width: '80px', filterable: true },
   { key: 'name', label: 'Name', sortable: true, filterable: true },
   {
     key: 'date',
     label: 'Date',
     sortable: true,
     type: 'date',
+    filterable: true,
     format: (value) => new Date(value).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -84,13 +88,15 @@ const advancedColumns: TableColumn[] = [
     label: 'Amount',
     sortable: true,
     type: 'number',
+    filterable: true,
     format: (value) => `$${value.toFixed(2)}`
   },
   {
     key: 'status',
     label: 'Status',
     sortable: true,
-    format: (value: string, row) => {
+    filterable: true,
+    format: (value: string, _row) => {
       const statusClasses: Record<string, string> = {
         completed: 'status-completed',
         pending: 'status-pending',
@@ -104,9 +110,12 @@ const advancedColumns: TableColumn[] = [
     key: 'isActive',
     label: 'Active',
     type: 'boolean',
-    format: (value) => value ?
-      '<span class="status-active">✓</span>' :
-      '<span class="status-inactive">✗</span>'
+    filterable: true,
+    format: (value: boolean) => {
+      return value
+        ? '<span class="status-active">✓</span>'
+        : '<span class="status-inactive">✗</span>'
+    }
   }
 ]
 
@@ -203,6 +212,17 @@ body {
   --arpix-primary-color: #4f46e5;
   --arpix-border-color: #e5e7eb;
   --arpix-header-background: #f3f4f6;
+}
+
+/* Debug info styles */
+.debug-info {
+  margin-top: 1rem;
+  padding: 0.5rem;
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+  color: #6c757d;
 }
 
 /* Status badge styles */

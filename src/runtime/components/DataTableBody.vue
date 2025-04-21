@@ -1,31 +1,33 @@
 <template>
-  <tr 
-    v-for="(item, rowIndex) in items" 
+  <tr
+    v-for="(item, rowIndex) in items"
     :key="getRowKey(item, rowIndex)"
     class="arpix-data-table-row"
     :class="{ 'arpix-data-table-row-selected': isSelected(item) }"
     @click="handleRowClick(item, rowIndex)"
   >
+    <!-- Debug info -->
+    <!-- {{ item }} -->
     <!-- Selection Checkbox Column -->
     <td v-if="selectable" class="arpix-data-table-cell arpix-data-table-selection-cell" @click.stop>
-      <input 
-        type="checkbox" 
-        :checked="isSelected(item)" 
+      <input
+        type="checkbox"
+        :checked="isSelected(item)"
         @change="toggleSelect(item)"
         class="arpix-data-table-select"
       />
     </td>
-    
+
     <!-- Regular Columns -->
-    <td 
-      v-for="column in columns" 
+    <td
+      v-for="column in columns"
       :key="column.key"
       class="arpix-data-table-cell"
       :class="[column.class]"
       @click.stop="handleCellClick(getCellValue(item, column), column.key, item)"
     >
       <slot :name="`cell(${column.key})`" :value="getCellValue(item, column)" :row="item" :column="column">
-        <component 
+        <component
           v-if="column.renderer"
           :is="column.renderer"
           :value="getCellValue(item, column)"
@@ -71,17 +73,17 @@ const getRowKey = (item: any, index: number) => {
 
 const isSelected = (item: any) => {
   if (!props.selected) return false
-  
+
   if (props.rowKey && item[props.rowKey]) {
     return props.selected.some(selected => selected[props.rowKey] === item[props.rowKey])
   }
-  
+
   return props.selected.includes(item)
 }
 
 const toggleSelect = (item: any) => {
   const newSelected = [...selectedItems.value]
-  
+
   if (isSelected(item)) {
     // Remove from selection
     if (props.rowKey && item[props.rowKey]) {
@@ -99,7 +101,7 @@ const toggleSelect = (item: any) => {
     // Add to selection
     newSelected.push(item)
   }
-  
+
   emit('select', newSelected)
 }
 
@@ -107,36 +109,36 @@ const getCellValue = (item: any, column: TableColumn) => {
   if (column.relation) {
     // Handle relation
     const { foreignKey, table, displayField } = column.relation
-    
+
     // Check if the relation is already loaded
     if (item[table]) {
       return item[table][displayField]
     }
-    
+
     // Return the foreign key as fallback
     return item[foreignKey]
   }
-  
+
   return item[column.key]
 }
 
 const formatCellValue = (item: any, column: TableColumn) => {
   const value = getCellValue(item, column)
-  
+
   // Use custom formatter if provided
   if (column.format && typeof column.format === 'function') {
     return column.format(value, item)
   }
-  
+
   // Default formatting based on column type
   if (column.type === 'date' && value) {
     return new Date(value).toLocaleDateString()
   }
-  
+
   if (column.type === 'boolean') {
     return value ? 'Yes' : 'No'
   }
-  
+
   // Return as is for other types
   return value !== undefined && value !== null ? value : ''
 }

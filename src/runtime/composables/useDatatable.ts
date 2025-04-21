@@ -1,10 +1,8 @@
-import { ref, reactive, computed, watch, onMounted } from 'vue'
-import { useNuxtApp } from '#app'
-import type { 
-  TableConfig, 
-  TableState, 
-  SortConfig, 
-  PaginationConfig,
+import { ref, reactive, watch, onMounted } from 'vue'
+import type {
+  TableConfig,
+  TableState,
+  SortConfig,
   FilterSet,
   TableColumn
 } from '../types'
@@ -13,8 +11,7 @@ import type {
  * Core composable for managing data table state and operations
  */
 export function useDatatable(config: TableConfig) {
-  const nuxtApp = useNuxtApp()
-  
+
   // Initialize state
   const state = ref<TableState>({
     items: [],
@@ -31,25 +28,32 @@ export function useDatatable(config: TableConfig) {
     selected: [],
     relationsCache: {}
   })
-  
+
   // Cache for resolved relations
   const relationsCache = reactive<Record<string, any>>({})
-  
+
   /**
    * Load data from the data source
    */
   const loadData = async () => {
     state.value.loading = true
     state.value.error = null
-    
+
     try {
       let data: any[] = []
-      
+      console.log('Loading data from source:', config.dataSource)
+
+      // Direct assignment for array data sources to ensure data is loaded
+      if (Array.isArray(config.dataSource)) {
+        state.value.items = [...config.dataSource]
+      }
+
       // Handle different types of data sources
       if (Array.isArray(config.dataSource)) {
         // Array data source
         data = [...config.dataSource]
-        
+        console.log('Array data source, items:', data.length)
+
         // Apply client-side pagination, sorting, filtering
         if (config.pagination === 'client') {
           data = processClientData(data)
@@ -67,20 +71,21 @@ export function useDatatable(config: TableConfig) {
         data = await fetchFromApi(config.dataSource)
       } else if (typeof config.dataSource === 'object') {
         // Object data source (assuming it has items property)
-        data = config.dataSource.items || []
+        data = (config.dataSource as any).items || []
       }
-      
+
       // Update state
       state.value.items = data
-      
+      console.log('Data loaded, items:', state.value.items)
+
       // If server pagination, update total
       if (config.pagination === 'server' && typeof data === 'object' && 'total' in data) {
-        state.value.pagination.total = data.total
+        state.value.pagination.total = (data as any).total
       } else {
         // For client-side pagination, set total to array length
         state.value.pagination.total = data.length
       }
-      
+
       // Load relations if needed
       if (config.relations && config.relations.length > 0) {
         await loadRelations()
@@ -92,58 +97,104 @@ export function useDatatable(config: TableConfig) {
       state.value.loading = false
     }
   }
-  
+
   /**
    * Process data client-side (sorting, filtering, pagination)
    */
   const processClientData = (data: any[]): any[] => {
+    console.log('Processing client data, items:', data.length)
     let processed = [...data]
-    
+
     // Apply search
     if (state.value.searchQuery) {
       processed = applySearch(processed, state.value.searchQuery)
+      console.log('After search:', processed.length, 'items')
     }
-    
+
     // Apply filters
     if (Object.keys(state.value.filters).length > 0) {
       processed = applyFilters(processed, state.value.filters)
+      console.log('After filters:', processed.length, 'items')
     }
-    
+
     // Apply sorting
     if (state.value.sort) {
+      console.log('Applying sort in processClientData:', state.value.sort)
       processed = applySorting(processed, state.value.sort)
+      console.log('After sorting:', processed.length, 'items')
+    } else {
+      console.log('No sort configuration found')
     }
-    
+
     // Calculate total before pagination
     state.value.pagination.total = processed.length
-    
-    // Apply pagination
-    const { page, perPage } = state.value.pagination
-    const start = (page - 1) * perPage
-    const end = start + perPage
-    
-    return processed.slice(start, end)
+
+    // Return all data for client-side pagination
+    // Pagination will be applied in getDisplayItems
+    return processed
   }
-  
+
   /**
    * Apply search to data
    */
   const applySearch = (data: any[], query: string): any[] => {
     if (!query) return data
-    
+
+    console.log('Applying search with query:', query)
+
+    // Check if config.columns is defined
+    if (!config.columns || !Array.isArray(config.columns)) {
+      console.error('Error: config.columns is undefined or not an array', config)
+      return data
+    }
+
+    // Get columns that can be searched (not explicitly set to filterable: false)
     const searchableColumns = config.columns.filter(col => col.filterable !== false)
-    const lowerQuery = query.toLowerCase()
-    
-    return data.filter(item => {
+    console.log('Searchable columns:', searchableColumns.map(col => col.key))
+
+    if (searchableColumns.length === 0) {
+      console.warn('No searchable columns found. Make sure columns have filterable: true')
+      return data
+    }
+
+    const lowerQuery = query.toLowerCase().trim()
+
+    if (lowerQuery === '') return data
+
+    const filteredData = data.filter(item => {
+      // Skip if item is not an object
+      if (!item || typeof item !== 'object') return false
+
       return searchableColumns.some(column => {
+        // Skip if column key is not defined
+        if (!column || !column.key) return false
+
+        // Get value from item
         const value = item[column.key]
         if (value === null || value === undefined) return false
-        
-        return String(value).toLowerCase().includes(lowerQuery)
+
+        // Convert to string and check if it includes the query
+        try {
+          const stringValue = String(value).toLowerCase()
+          const matches = stringValue.includes(lowerQuery)
+
+          // For debugging
+          if (matches) {
+            console.log(`Match found in column ${column.key}:`, { value, query: lowerQuery })
+          }
+
+          return matches
+        } catch (error) {
+          console.error(`Error searching in column ${column.key}:`, error)
+          return false
+        }
       })
     })
+
+    console.log(`Search results: ${filteredData.length} items found out of ${data.length}`)
+    return filteredData
   }
-  
+
   /**
    * Apply filters to data
    */
@@ -152,16 +203,16 @@ export function useDatatable(config: TableConfig) {
       return Object.entries(filters).every(([key, filter]) => {
         // Skip empty filters
         if (!filter || (typeof filter === 'object' && !filter.value)) return true
-        
+
         // Handle simple filters (key: value)
         if (typeof filter !== 'object') {
           return item[key] === filter
         }
-        
+
         // Handle complex filters
         const { field, operator, value } = filter
         const itemValue = item[field]
-        
+
         switch (operator) {
           case '=':
             return itemValue === value
@@ -187,49 +238,71 @@ export function useDatatable(config: TableConfig) {
       })
     })
   }
-  
+
   /**
    * Apply sorting to data
    */
   const applySorting = (data: any[], sort: SortConfig): any[] => {
     const { field, direction } = sort
     const multiplier = direction === 'asc' ? 1 : -1
-    
+
+    console.log(`Applying sort: ${field} ${direction}`)
+
     return [...data].sort((a, b) => {
       const aValue = a[field]
       const bValue = b[field]
-      
+
       // Handle null/undefined values
       if (aValue === null || aValue === undefined) return multiplier
       if (bValue === null || bValue === undefined) return -multiplier
-      
+
       // Compare based on type
-      if (typeof aValue === 'string') {
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
         return multiplier * aValue.localeCompare(bValue)
       }
-      
-      return multiplier * (aValue - bValue)
+
+      // Handle numbers
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return multiplier * (aValue - bValue)
+      }
+
+      // Handle dates
+      if (aValue instanceof Date && bValue instanceof Date) {
+        return multiplier * (aValue.getTime() - bValue.getTime())
+      }
+
+      // Handle date strings
+      if (typeof aValue === 'string' && typeof bValue === 'string') {
+        const aDate = new Date(aValue)
+        const bDate = new Date(bValue)
+        if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
+          return multiplier * (aDate.getTime() - bDate.getTime())
+        }
+      }
+
+      // Default comparison
+      return multiplier * (String(aValue).localeCompare(String(bValue)))
     })
   }
-  
+
   /**
    * Fetch data from API
    */
   const fetchFromApi = async (url: string): Promise<any[]> => {
     const { pagination, sort, filters, searchQuery } = state.value
-    
+
     // Build query parameters
     const params = new URLSearchParams()
-    
+
     // Pagination params
     params.append('page', String(pagination.page))
     params.append('perPage', String(pagination.perPage))
-    
+
     // Sort params
     if (sort) {
       params.append('sort', `${sort.field}:${sort.direction}`)
     }
-    
+
     // Filter params
     Object.entries(filters).forEach(([key, value]) => {
       if (typeof value === 'object') {
@@ -238,73 +311,79 @@ export function useDatatable(config: TableConfig) {
         params.append(`filter[${key}]`, String(value))
       }
     })
-    
+
     // Search param
     if (searchQuery) {
       params.append('search', searchQuery)
     }
-    
+
     // Relations
     if (config.relations && config.relations.length > 0) {
       const relationNames = config.relations.map(r => r.name).join(',')
       params.append('with', relationNames)
     }
-    
+
     // Make the request
     const response = await fetch(`${url}?${params.toString()}`)
-    
+
     if (!response.ok) {
       throw new Error(`API error: ${response.status} ${response.statusText}`)
     }
-    
+
     return await response.json()
   }
-  
+
   /**
    * Load relations data
    */
   const loadRelations = async () => {
     if (!config.relations || !config.relations.length) return
-    
+
+    // Check if config.columns is defined
+    if (!config.columns || !Array.isArray(config.columns)) {
+      console.error('Error: config.columns is undefined or not an array', config)
+      return
+    }
+
     // Get relation columns
     const relationColumns = config.columns.filter(col => col.relation)
-    
+
     // Skip if no relation columns
     if (!relationColumns.length) return
-    
+
     // Process each item
     for (const item of state.value.items) {
       for (const column of relationColumns) {
         if (!column.relation) continue
-        
-        const { table, foreignKey, displayField } = column.relation
+
+        const { table, foreignKey } = column.relation
         const foreignKeyValue = item[foreignKey]
-        
+
         // Skip if no foreign key value
         if (foreignKeyValue === null || foreignKeyValue === undefined) continue
-        
+
         // Check cache first
         const cacheKey = `${table}:${foreignKeyValue}`
-        
+
         if (relationsCache[cacheKey]) {
           item[table] = relationsCache[cacheKey]
           continue
         }
-        
+
         // Find relation config
         const relationConfig = config.relations.find(r => r.name === table || r.target === table)
-        
+
         if (!relationConfig) continue
-        
+
         // Load relation data
         try {
           // This is a simplified example - in a real app, you'd fetch from an API
           // or use a more sophisticated data loading mechanism
           const relationData = await fetchRelation(table, foreignKeyValue)
-          
+
           // Cache the result
           relationsCache[cacheKey] = relationData
-          
+
           // Attach to the item
           item[table] = relationData
         } catch (error) {
@@ -313,7 +392,7 @@ export function useDatatable(config: TableConfig) {
       }
     }
   }
-  
+
   /**
    * Fetch relation data
    * This is a placeholder - in a real app, you'd implement this based on your data source
@@ -321,94 +400,104 @@ export function useDatatable(config: TableConfig) {
   const fetchRelation = async (table: string, id: any): Promise<any> => {
     // In a real app, you'd fetch from an API or other data source
     // This is just a placeholder implementation
-    
+
     // Example: fetch from API
     try {
       const response = await fetch(`/api/arpix-data-table/relation?table=${table}&id=${id}`)
-      
+
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`)
       }
-      
+
       return await response.json()
     } catch (error) {
       console.error(`Error fetching relation ${table}:${id}:`, error)
       return null
     }
   }
-  
+
   /**
    * Set current page
    */
   const setPage = (page: number) => {
     if (page < 1) page = 1
-    
+
     state.value.pagination.page = page
-    
+
     // Reload data if using server pagination
     if (config.pagination === 'server') {
       loadData()
     }
   }
-  
+
   /**
    * Set page size
    */
   const setPageSize = (size: number) => {
     state.value.pagination.perPage = size
     state.value.pagination.page = 1 // Reset to first page
-    
+
     // Reload data if using server pagination
     if (config.pagination === 'server') {
       loadData()
     }
   }
-  
+
   /**
    * Set sort configuration
    */
   const setSort = (sort: SortConfig) => {
+    console.log('Setting sort:', sort)
     state.value.sort = sort
-    
+
     // Reload data if using server pagination
     if (config.pagination === 'server') {
       loadData()
+    } else if (Array.isArray(state.value.items) && state.value.items.length > 0) {
+      // For client-side sorting, we don't need to reload data
+      // The displayItems computed property will automatically update
+      console.log('Client-side sorting applied')
     }
   }
-  
+
   /**
    * Set search query
    */
   const setSearch = (query: string) => {
+    console.log('Setting search query:', query)
     state.value.searchQuery = query
     state.value.pagination.page = 1 // Reset to first page
-    
+
     // Reload data if using server pagination
     if (config.pagination === 'server') {
       loadData()
+    } else if (Array.isArray(state.value.items) && state.value.items.length > 0) {
+      // For client-side search, we don't need to reload data
+      // The displayItems computed property will automatically update
+      console.log('Client-side search applied')
     }
   }
-  
+
   /**
    * Set filters
    */
   const setFilters = (filters: FilterSet) => {
     state.value.filters = filters
     state.value.pagination.page = 1 // Reset to first page
-    
+
     // Reload data if using server pagination
     if (config.pagination === 'server') {
       loadData()
     }
   }
-  
+
   /**
    * Set selected rows
    */
   const setSelected = (selected: any[]) => {
     state.value.selected = selected
   }
-  
+
   /**
    * Get display items (for client-side pagination)
    */
@@ -416,10 +505,18 @@ export function useDatatable(config: TableConfig) {
     if (config.pagination === 'server') {
       return state.value.items
     }
-    
-    return processClientData([...state.value.items])
+
+    // Process data for client-side pagination
+    const processed = processClientData([...state.value.items])
+
+    // Apply pagination
+    const { page, perPage } = state.value.pagination
+    const start = (page - 1) * perPage
+    const end = start + perPage
+
+    return processed.slice(start, end)
   }
-  
+
   /**
    * Format cell value based on column configuration
    */
@@ -428,46 +525,46 @@ export function useDatatable(config: TableConfig) {
     if (column.format && typeof column.format === 'function') {
       return column.format(value, row)
     }
-    
+
     // Default formatting based on column type
     if (column.type === 'date' && value) {
       return new Date(value).toLocaleDateString()
     }
-    
+
     if (column.type === 'boolean') {
       return value ? 'Yes' : 'No'
     }
-    
+
     // Return as is for other types
     return value !== undefined && value !== null ? value : ''
   }
-  
+
   /**
    * Export data to various formats
    */
   const exportData = async (format: 'csv' | 'excel' | 'pdf', options: any = {}) => {
     // This is a placeholder - in a real app, you'd implement export functionality
     console.log(`Exporting data to ${format}`, options)
-    
+
     // Example implementation for CSV export
     if (format === 'csv') {
       const columns = options.columns || config.columns
       const items = options.items || state.value.items
-      
+
       // Generate CSV header
-      const header = columns.map(col => col.label).join(',')
-      
+      const header = columns.map((col: TableColumn) => col.label).join(',')
+
       // Generate CSV rows
-      const rows = items.map(item => {
-        return columns.map(col => {
+      const rows = items.map((item: any) => {
+        return columns.map((col: TableColumn) => {
           const value = item[col.key]
           return `"${value !== undefined && value !== null ? value : ''}"`
         }).join(',')
       })
-      
+
       // Combine header and rows
       const csv = [header, ...rows].join('\n')
-      
+
       // Create download link
       const blob = new Blob([csv], { type: 'text/csv' })
       const url = URL.createObjectURL(blob)
@@ -475,24 +572,24 @@ export function useDatatable(config: TableConfig) {
       a.href = url
       a.download = options.fileName || 'export.csv'
       a.click()
-      
+
       // Clean up
       URL.revokeObjectURL(url)
     }
   }
-  
+
   // Watch for config changes
   watch(() => config.perPage, (newPerPage) => {
     if (newPerPage && newPerPage !== state.value.pagination.perPage) {
       setPageSize(newPerPage)
     }
   })
-  
+
   // Initialize
   onMounted(() => {
     // Initial data load is handled by the parent component
   })
-  
+
   return {
     state,
     loadData,

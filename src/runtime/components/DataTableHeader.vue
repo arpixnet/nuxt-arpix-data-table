@@ -2,18 +2,18 @@
   <tr class="arpix-data-table-header-row">
     <!-- Selection Checkbox Column -->
     <th v-if="selectable" class="arpix-data-table-header-cell arpix-data-table-selection-cell">
-      <input 
-        type="checkbox" 
-        :checked="allSelected" 
+      <input
+        type="checkbox"
+        :checked="allSelected"
         :indeterminate="someSelected && !allSelected"
         @change="toggleSelectAll"
         class="arpix-data-table-select-all"
       />
     </th>
-    
+
     <!-- Regular Columns -->
-    <th 
-      v-for="column in columns" 
+    <th
+      v-for="column in columns"
       :key="column.key"
       class="arpix-data-table-header-cell"
       :class="[
@@ -26,10 +26,10 @@
     >
       <div class="arpix-data-table-header-content">
         <span>{{ column.label }}</span>
-        
+
         <!-- Sort Indicator -->
-        <span 
-          v-if="column.sortable" 
+        <span
+          v-if="column.sortable"
           class="arpix-data-table-sort-icon"
           :class="{
             'arpix-data-table-sort-asc': isSortedAsc(column),
@@ -82,7 +82,11 @@ const someSelected = computed(() => {
 
 // Methods
 const isSorted = (column: TableColumn) => {
-  return props.sort && props.sort.field === column.key
+  const sorted = props.sort && props.sort.field === column.key
+  if (sorted) {
+    console.log(`Column ${column.key} is sorted ${props.sort?.direction}`)
+  }
+  return sorted
 }
 
 const isSortedAsc = (column: TableColumn) => {
@@ -95,16 +99,17 @@ const isSortedDesc = (column: TableColumn) => {
 
 const getColumnStyle = (column: TableColumn) => {
   const style: Record<string, string> = {}
-  
+
   if (column.width) {
     style.width = column.width
   }
-  
+
   return style
 }
 
 const handleSort = (column: TableColumn) => {
   if (column.sortable) {
+    console.log('Header sort clicked:', column.key)
     emit('sort', column)
   }
 }

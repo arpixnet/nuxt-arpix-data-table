@@ -8,12 +8,38 @@
     <div class="arpix-data-table-controls" v-if="showSearch || $slots.controls">
       <!-- Search Input -->
       <div class="arpix-data-table-search" v-if="showSearch">
-        <input
-          type="text"
-          v-model="searchQuery"
-          placeholder="Search..."
-          class="arpix-data-table-search-input"
-        />
+        <div class="arpix-data-table-search-container">
+          <div class="arpix-data-table-search-input-wrapper">
+            <input
+              type="text"
+              v-model="searchQuery"
+              placeholder="Search..."
+              class="arpix-data-table-search-input"
+              @keyup.enter="handleSearch"
+            />
+            <button
+              v-if="searchQuery"
+              class="arpix-data-table-search-clear"
+              @click="clearSearch"
+              title="Clear search"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+          <button
+            class="arpix-data-table-search-button"
+            @click="handleSearch"
+            title="Search"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Custom Controls Slot -->
@@ -52,15 +78,22 @@
             </tr>
           </slot>
 
-          <slot name="empty" v-else-if="!displayItems.length">
+          <slot name="empty" v-else-if="!displayItems || !displayItems.length">
             <tr class="arpix-data-table-empty-row">
               <td :colspan="visibleColumns.length" class="arpix-data-table-empty-cell">
                 <div class="arpix-data-table-empty">{{ noDataText }}</div>
+                <div class="arpix-data-table-debug">Debug: {{ debug }}</div>
               </td>
             </tr>
           </slot>
 
           <template v-else>
+            <!-- Debug info -->
+            <tr v-if="debug.displayItems === 0 && debug.dataLength > 0" class="arpix-data-table-debug-row">
+              <td :colspan="visibleColumns.length" class="arpix-data-table-debug-cell">
+                <div class="arpix-data-table-debug">Data available but not displayed. Debug: {{ debug }}</div>
+              </td>
+            </tr>
             <slot name="body" :items="displayItems" :columns="visibleColumns" :selected="selected">
               <ArpixDataTableBody
                 :items="displayItems"
@@ -109,9 +142,7 @@ import { useDatatable } from '../composables'
 import type {
   TableConfig,
   TableColumn,
-  SortConfig,
-  PaginationConfig,
-  TableState
+  SortConfig
 } from '../types'
 
 // Define props
@@ -176,11 +207,11 @@ const emit = defineEmits<{
   'cell-click': [value: any, key: string, row: any]
 }>()
 
-// Get slots
-const slots = useSlots()
+// Get slots for later use if needed
+// const slots = useSlots()
 
 // Create the table configuration
-const tableConfig = computed<TableConfig>(() => ({
+const tableConfig: TableConfig = {
   columns: props.columns,
   dataSource: props.dataSource,
   perPage: props.perPage,
@@ -198,7 +229,11 @@ const tableConfig = computed<TableConfig>(() => ({
   error: props.error,
   noDataText: props.noDataText,
   initialSort: props.initialSort
-}))
+}
+
+// Log the table configuration
+console.log('Table config:', tableConfig)
+console.log('Columns:', props.columns)
 
 // Use the datatable composable
 const {
@@ -216,11 +251,39 @@ const searchQuery = ref('')
 const sort = computed(() => state.value.sort)
 const pagination = computed(() => state.value.pagination)
 const selected = computed(() => state.value.selected)
-const displayItems = computed(() => getDisplayItems())
+
+// Sync searchQuery with state.searchQuery
+watch(() => state.value.searchQuery, (value: string) => {
+  if (value !== searchQuery.value) {
+    searchQuery.value = value
+  }
+})
+const displayItems = computed(() => {
+  const items = getDisplayItems()
+  console.log('Display items:', items)
+  return items
+})
+
+// Debug computed property
+const debug = computed(() => {
+  return {
+    dataSourceType: typeof props.dataSource,
+    isArray: Array.isArray(props.dataSource),
+    dataLength: Array.isArray(props.dataSource) ? props.dataSource.length : 0,
+    stateItems: state.value.items.length,
+    displayItems: displayItems.value ? displayItems.value.length : 0,
+    firstItem: Array.isArray(props.dataSource) && props.dataSource.length > 0 ? props.dataSource[0] : null,
+    searchQuery: searchQuery.value,
+    stateSearchQuery: state.value.searchQuery,
+    searchable: props.searchable,
+    sort: sort.value,
+    columns: visibleColumns.value.map(col => ({ key: col.key, sortable: col.sortable }))
+  }
+})
 
 // Computed properties
 const visibleColumns = computed(() =>
-  props.columns.filter(col => col.visible !== false)
+  props.columns.filter((col: TableColumn) => col.visible !== false)
 )
 
 const themeStyles = computed(() => {
@@ -228,7 +291,7 @@ const themeStyles = computed(() => {
 
   if (props.themeVars) {
     Object.entries(props.themeVars).forEach(([key, value]) => {
-      styles[`--arpix-${key}`] = value
+      styles[`--arpix-${key}`] = value as string
     })
   }
 
@@ -236,35 +299,65 @@ const themeStyles = computed(() => {
 })
 
 // Watch for changes in props
-watch(() => props.loading, (value) => {
+watch(() => props.loading, (value: boolean) => {
   state.value.loading = value
 })
 
-watch(() => props.error, (value) => {
+watch(() => props.error, (value: string) => {
   state.value.error = value
 })
 
-watch(() => searchQuery.value, (value) => {
-  state.value.searchQuery = value
+watch(() => searchQuery.value, (value: string) => {
+  console.log('Search query changed:', value)
+  // Use setSearch function to update the search query
+  setSearch(value)
   emit('search-change', value)
 
-  // Reset to first page when search changes
-  if (pagination.value.page !== 1) {
-    setPage(1)
+  // Reset to first page when search changes is handled in setSearch
+
+  // Force refresh of display items
+  if (Array.isArray(props.dataSource)) {
+    console.log('Refreshing display items after search')
+    // The displayItems computed property will automatically update
+    console.log('Display items after search:', displayItems.value?.length || 0)
   }
 })
+
+// Watch for changes in dataSource
+watch(() => props.dataSource, (newValue) => {
+  console.log('dataSource changed:', newValue)
+  if (Array.isArray(newValue)) {
+    state.value.items = [...newValue]
+    console.log('Updated items from watcher:', state.value.items.length, 'items')
+  } else {
+    loadData()
+  }
+}, { deep: true })
+
+// Watch for changes in columns
+watch(() => props.columns, (newValue) => {
+  console.log('columns changed:', newValue)
+  tableConfig.columns = newValue
+}, { deep: true })
 
 // Event handlers
 const handleSort = (column: TableColumn) => {
   if (!column.sortable) return
+
+  console.log('Handling sort for column:', column.key)
 
   const newSort: SortConfig = {
     field: column.key,
     direction: sort.value?.field === column.key && sort.value?.direction === 'asc' ? 'desc' : 'asc'
   }
 
+  console.log('New sort:', newSort)
+
   setSort(newSort)
   emit('sort-change', newSort)
+
+  // Force refresh of display items
+  console.log('Display items after sort:', displayItems.value?.length || 0)
 }
 
 const handlePageChange = (page: number) => {
@@ -285,8 +378,25 @@ const handleCellClick = (value: any, key: string, row: any) => {
   emit('cell-click', value, key, row)
 }
 
+// Handle search button click or enter key press
+const handleSearch = () => {
+  console.log('Search button clicked or enter pressed, query:', searchQuery.value)
+  setSearch(searchQuery.value)
+  emit('search-change', searchQuery.value)
+}
+
+// Clear search input and reset results
+const clearSearch = () => {
+  console.log('Clearing search')
+  searchQuery.value = ''
+  setSearch('')
+  emit('search-change', '')
+}
+
 // Initialize
-onMounted(() => {
+onMounted(async () => {
+  console.log('DataTable mounted, initializing with dataSource:', props.dataSource)
+
   // Set initial state
   if (props.initialSort) {
     setSort(props.initialSort)
@@ -296,8 +406,20 @@ onMounted(() => {
     setPage(props.initialPage)
   }
 
-  // Load data
-  loadData()
+  // Direct assignment for array data sources to ensure data is loaded
+  if (Array.isArray(props.dataSource)) {
+    state.value.items = [...props.dataSource]
+    console.log('Directly assigned array data:', state.value.items.length, 'items')
+  } else {
+    // Load data from other sources
+    await loadData()
+    console.log('Data loaded:', state.value.items)
+  }
+
+  // Initialize search if needed
+  if (searchQuery.value) {
+    setSearch(searchQuery.value)
+  }
 })
 </script>
 
@@ -334,12 +456,27 @@ onMounted(() => {
   border-bottom: 1px solid var(--arpix-border-color);
 }
 
+.arpix-data-table-search-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 300px;
+}
+
+.arpix-data-table-search-input-wrapper {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
 .arpix-data-table-search-input {
   width: 100%;
-  min-width: 250px;
+  min-width: 200px;
   padding: 0.5rem 0.75rem;
+  padding-right: 2rem;
   border: 1px solid var(--arpix-border-color);
-  border-radius: 0.375rem;
+  border-radius: 0.375rem 0 0 0.375rem;
   font-size: 0.875rem;
   outline: none;
   transition: border-color 0.2s ease;
@@ -348,6 +485,52 @@ onMounted(() => {
 .arpix-data-table-search-input:focus {
   border-color: var(--arpix-primary-color);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.arpix-data-table-search-clear {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background-color: var(--arpix-secondary-color);
+  color: white;
+  border: none;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+}
+
+.arpix-data-table-search-clear:hover {
+  opacity: 1;
+}
+
+.arpix-data-table-search-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+  width: 36px;
+  background-color: var(--arpix-primary-color);
+  color: white;
+  border: none;
+  border-radius: 0 0.375rem 0.375rem 0;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.arpix-data-table-search-button:hover {
+  background-color: var(--arpix-primary-color-dark, #2563eb);
+}
+
+.arpix-data-table-search-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
 }
 
 .arpix-data-table-wrapper {
@@ -379,6 +562,23 @@ onMounted(() => {
   color: var(--arpix-secondary-color);
 }
 
+.arpix-data-table-debug {
+  margin-top: 0.5rem;
+  font-size: 0.75rem;
+  color: var(--arpix-secondary-color);
+  opacity: 0.7;
+}
+
+.arpix-data-table-debug-row {
+  background-color: rgba(255, 244, 229, 0.5);
+}
+
+.arpix-data-table-debug-cell {
+  padding: 1rem;
+  text-align: center;
+  border-bottom: 1px solid var(--arpix-border-color);
+}
+
 .arpix-data-table-footer {
   padding: 0.75rem 1rem;
   border-top: 1px solid var(--arpix-border-color);
@@ -391,10 +591,7 @@ onMounted(() => {
   justify-content: center;
 }
 
-/* Theme: default */
-.arpix-data-table.theme-default {
-  /* Default theme styles are already defined in the base styles */
-}
+/* Theme: default - styles already defined in base styles */
 
 /* Theme: dark */
 .arpix-data-table.theme-dark {
