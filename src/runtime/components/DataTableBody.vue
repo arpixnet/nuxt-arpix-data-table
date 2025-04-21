@@ -43,6 +43,7 @@
 <script lang="ts" setup>
 import { computed } from 'vue'
 import type { TableColumn } from '../types'
+import { format, parseISO, parse, isValid } from 'date-fns'
 
 // Define props
 const props = defineProps<{
@@ -137,11 +138,38 @@ const formatCellValue = (item: any, column: TableColumn) => {
       if (typeof column.format === 'string') {
         switch (column.format) {
           case 'date-format':
-            return new Date(value).toLocaleDateString('en-US', {
-              year: 'numeric',
-              month: 'short',
-              day: 'numeric'
-            })
+            try {
+              // Parse the date using date-fns
+              let date: Date | null = null;
+
+              if (typeof value === 'string') {
+                if (value.includes('/')) {
+                  // Try DD/MM/YYYY format
+                  date = parse(value, 'dd/MM/yyyy', new Date());
+                  if (!isValid(date)) {
+                    // Try MM/DD/YYYY format as fallback
+                    date = parse(value, 'MM/dd/yyyy', new Date());
+                  }
+                } else {
+                  // Try ISO format (YYYY-MM-DD)
+                  date = parseISO(value);
+                }
+              } else if (value instanceof Date) {
+                date = value;
+              }
+
+              // Check if date is valid
+              if (!date || !isValid(date)) {
+                console.warn('Invalid date for formatting:', value);
+                return value;
+              }
+
+              // Format as DD/MM/YYYY with leading zeros
+              return format(date, 'dd/MM/yyyy');
+            } catch (e) {
+              console.error('Error formatting date:', e);
+              return value;
+            }
           case 'currency-format':
             return `$${Number(value).toFixed(2)}`
           case 'status-format':
@@ -165,7 +193,33 @@ const formatCellValue = (item: any, column: TableColumn) => {
   // Default formatting based on column type
   if (column.type === 'date' && value) {
     try {
-      return new Date(value).toLocaleDateString()
+      // Parse the date using date-fns
+      let date: Date | null = null;
+
+      if (typeof value === 'string') {
+        if (value.includes('/')) {
+          // Try DD/MM/YYYY format
+          date = parse(value, 'dd/MM/yyyy', new Date());
+          if (!isValid(date)) {
+            // Try MM/DD/YYYY format as fallback
+            date = parse(value, 'MM/dd/yyyy', new Date());
+          }
+        } else {
+          // Try ISO format (YYYY-MM-DD)
+          date = parseISO(value);
+        }
+      } else if (value instanceof Date) {
+        date = value;
+      }
+
+      // Check if date is valid
+      if (!date || !isValid(date)) {
+        console.warn(`Invalid date for column ${column.key}:`, value);
+        return value;
+      }
+
+      // Format as DD/MM/YYYY with leading zeros
+      return format(date, 'dd/MM/yyyy');
     } catch (e) {
       console.error(`Error formatting date for column ${column.key}:`, e)
       return value

@@ -1,4 +1,5 @@
 import { ref, reactive, watch, onMounted } from 'vue'
+import { parse, format, isValid, parseISO, isSameDay, startOfDay } from 'date-fns'
 import type {
   TableConfig,
   TableState,
@@ -398,35 +399,95 @@ export function useDatatable(config: TableConfig) {
       filterValue = Number(filterValue)
     } else if (type === 'date') {
       try {
-        // Normalize date strings to YYYY-MM-DD format
+        // Parse dates using date-fns to handle different formats and avoid timezone issues
+        let itemDate: Date | null = null;
+        let filterDate: Date | null = null;
+
+        // Parse item value to Date
         if (typeof itemValue === 'string') {
-          // Remove any time component and ensure YYYY-MM-DD format
-          itemValue = itemValue.split('T')[0].split(' ')[0]
+          // Try to parse the date string
+          if (itemValue.includes('/')) {
+            // Handle DD/MM/YYYY format
+            itemDate = parse(itemValue, 'dd/MM/yyyy', new Date());
+            if (!isValid(itemDate)) {
+              // Try MM/DD/YYYY format as fallback
+              itemDate = parse(itemValue, 'MM/dd/yyyy', new Date());
+            }
+          } else {
+            // Try ISO format (YYYY-MM-DD)
+            itemDate = parseISO(itemValue);
+          }
+
+          // If parsing failed, log error
+          if (!isValid(itemDate)) {
+            console.error('Failed to parse item date:', itemValue);
+            return false;
+          }
+        } else if (itemValue instanceof Date) {
+          itemDate = itemValue;
+        } else {
+          console.error('Invalid date value:', itemValue);
+          return false;
         }
 
-        if (!(itemValue instanceof Date)) {
-          itemValue = new Date(itemValue)
-        }
-
+        // Parse filter value to Date
         if (typeof filterValue === 'string') {
-          // Remove any time component and ensure YYYY-MM-DD format
-          filterValue = filterValue.split('T')[0].split(' ')[0]
+          // Try to parse the date string
+          if (filterValue.includes('/')) {
+            // Handle DD/MM/YYYY format
+            filterDate = parse(filterValue, 'dd/MM/yyyy', new Date());
+            if (!isValid(filterDate)) {
+              // Try MM/DD/YYYY format as fallback
+              filterDate = parse(filterValue, 'MM/dd/yyyy', new Date());
+            }
+          } else {
+            // Try ISO format (YYYY-MM-DD)
+            filterDate = parseISO(filterValue);
+          }
+
+          // If parsing failed, log error
+          if (!isValid(filterDate)) {
+            console.error('Failed to parse filter date:', filterValue);
+            return false;
+          }
+        } else if (filterValue instanceof Date) {
+          filterDate = filterValue;
+        } else {
+          console.error('Invalid filter date value:', filterValue);
+          return false;
         }
 
-        if (!(filterValue instanceof Date)) {
-          filterValue = new Date(filterValue)
+        // Normalize dates to start of day to ignore time components
+        const itemDateNormalized = startOfDay(itemDate);
+        const filterDateNormalized = startOfDay(filterDate);
+
+        // Format dates for display and debugging
+        const itemFormatted = format(itemDateNormalized, 'dd/MM/yyyy');
+        const filterFormatted = format(filterDateNormalized, 'dd/MM/yyyy');
+
+        // Check if dates are the same day (ignoring time)
+        const equal = isSameDay(itemDateNormalized, filterDateNormalized);
+
+        console.log('Comparing dates with date-fns:', {
+          original: { itemValue, filterValue },
+          parsed: { itemDate, filterDate },
+          normalized: { itemDateNormalized, filterDateNormalized },
+          formatted: { itemFormatted, filterFormatted },
+          equal,
+          operator
+        });
+
+        // For equality and inequality comparisons, we can use isSameDay
+        if (operator === '=') {
+          return equal;
+        } else if (operator === '!=') {
+          return !equal;
         }
 
-        // Reset time components to compare dates only
-        itemValue.setHours(0, 0, 0, 0)
-        filterValue.setHours(0, 0, 0, 0)
-
-        console.log('Comparing dates:', {
-          itemValue,
-          filterValue,
-          itemValueStr: itemValue.toISOString(),
-          filterValueStr: filterValue.toISOString()
-        })
+        // For other comparisons, we need to compare the normalized dates
+        // Replace the original values with the normalized date objects for comparison
+        itemValue = itemDateNormalized;
+        filterValue = filterDateNormalized;
       } catch (e) {
         console.error('Error converting date values:', e)
         return false

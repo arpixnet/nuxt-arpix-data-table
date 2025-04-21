@@ -108,6 +108,7 @@
 import { computed } from 'vue'
 import type { TableColumn, SortConfig, FilterConfig, FilterSet } from '../types'
 import DataTableColumnFilter from './DataTableColumnFilter.vue'
+import { format, parse, isValid, parseISO } from 'date-fns'
 
 // Define props
 const props = defineProps<{
@@ -216,9 +217,34 @@ const formatFilterValue = (value: any, type?: string) => {
 
   if (type === 'date' && typeof value === 'string') {
     try {
-      return new Date(value).toLocaleDateString()
+      // Parse the date using date-fns
+      let date: Date | null = null;
+
+      if (value.includes('/')) {
+        // Try DD/MM/YYYY format
+        date = parse(value, 'dd/MM/yyyy', new Date());
+        if (!isValid(date)) {
+          // Try MM/DD/YYYY format as fallback
+          date = parse(value, 'MM/dd/yyyy', new Date());
+        }
+      } else {
+        // Try ISO format (YYYY-MM-DD)
+        date = parseISO(value);
+      }
+
+      // Check if date is valid
+      if (!date || !isValid(date)) {
+        console.warn('Invalid date for formatting in filter display:', value);
+        return value;
+      }
+
+      // Format as DD/MM/YYYY with leading zeros
+      const formatted = format(date, 'dd/MM/yyyy');
+      console.log('Formatted date for filter display:', { original: value, formatted });
+      return formatted;
     } catch (e) {
-      return value
+      console.error('Error formatting date for filter display:', e);
+      return value;
     }
   }
 

@@ -1,5 +1,6 @@
 import { defineEventHandler, getQuery, getRouterParam, createError } from 'h3'
 import type { FilterSet, SortConfig, PaginationConfig } from '../../types'
+import { parse, format, isValid, parseISO, isSameDay, startOfDay } from 'date-fns'
 
 /**
  * Main API handler for the data table engine
@@ -188,6 +189,86 @@ async function handleDataRequest(event: any, options: {
 
           // If we get here, return false to continue with other comparisons
           return false;
+        }
+
+        // Special handling for dates
+        if (typeof itemValue === 'string' && typeof value === 'string') {
+          // Check if both values look like dates
+          const isItemDate = !isNaN(Date.parse(itemValue));
+          const isFilterDate = !isNaN(Date.parse(value));
+
+          if (isItemDate && isFilterDate) {
+            try {
+              // Parse dates using date-fns
+              let itemDate: Date | null = null;
+              let filterDate: Date | null = null;
+
+              // Parse item value
+              if (itemValue.includes('/')) {
+                // Try DD/MM/YYYY format
+                itemDate = parse(itemValue, 'dd/MM/yyyy', new Date());
+                if (!isValid(itemDate)) {
+                  // Try MM/DD/YYYY format as fallback
+                  itemDate = parse(itemValue, 'MM/dd/yyyy', new Date());
+                }
+              } else {
+                // Try ISO format (YYYY-MM-DD)
+                itemDate = parseISO(itemValue);
+              }
+
+              // Parse filter value
+              if (value.includes('/')) {
+                // Try DD/MM/YYYY format
+                filterDate = parse(value, 'dd/MM/yyyy', new Date());
+                if (!isValid(filterDate)) {
+                  // Try MM/DD/YYYY format as fallback
+                  filterDate = parse(value, 'MM/dd/yyyy', new Date());
+                }
+              } else {
+                // Try ISO format (YYYY-MM-DD)
+                filterDate = parseISO(value);
+              }
+
+              // Check if both dates are valid
+              if (isValid(itemDate) && isValid(filterDate)) {
+                // Normalize dates to start of day to ignore time components
+                const itemDateNormalized = startOfDay(itemDate);
+                const filterDateNormalized = startOfDay(filterDate);
+
+                // Check if dates are the same day (ignoring time)
+                const equal = isSameDay(itemDateNormalized, filterDateNormalized);
+
+                console.log('Server comparing dates with date-fns:', {
+                  original: { itemValue, filterValue: value },
+                  parsed: { itemDate, filterDate },
+                  normalized: { itemDateNormalized, filterDateNormalized },
+                  formatted: {
+                    itemFormatted: format(itemDateNormalized, 'dd/MM/yyyy'),
+                    filterFormatted: format(filterDateNormalized, 'dd/MM/yyyy')
+                  },
+                  equal,
+                  operator
+                });
+
+                // Handle equality and inequality operators
+                if (operator === '=') {
+                  return equal;
+                } else if (operator === '!=') {
+                  return !equal;
+                } else if (operator === '>') {
+                  return itemDateNormalized > filterDateNormalized;
+                } else if (operator === '>=') {
+                  return itemDateNormalized >= filterDateNormalized;
+                } else if (operator === '<') {
+                  return itemDateNormalized < filterDateNormalized;
+                } else if (operator === '<=') {
+                  return itemDateNormalized <= filterDateNormalized;
+                }
+              }
+            } catch (e) {
+              console.error('Error comparing dates:', e);
+            }
+          }
         }
 
         // Special handling for ID fields

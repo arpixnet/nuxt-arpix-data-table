@@ -68,7 +68,6 @@
             type="date"
             v-model="dateFilterValue"
             class="arpix-data-table-filter-input"
-            @change="applyDateFilter"
           />
           <div class="arpix-data-table-filter-date-info" v-if="dateFilterValue">
             Selected date: {{ formatDateForDisplay(dateFilterValue) }}
@@ -151,6 +150,7 @@
 <script lang="ts" setup>
 import { ref, computed, watch, onMounted, onUnmounted, reactive } from 'vue'
 import type { TableColumn, FilterConfig } from '../types'
+import { format, parse, isValid, parseISO } from 'date-fns'
 
 // Define props
 const props = defineProps<{
@@ -227,28 +227,97 @@ const resetFilterValues = () => {
   selectedEnumValues.value = []
 }
 
-// Format date for display
+// Format date for display using date-fns
 const formatDateForDisplay = (dateStr: string) => {
   try {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString()
+    let date: Date | null = null;
+
+    // Parse the date string based on its format
+    if (dateStr.includes('/')) {
+      // Try DD/MM/YYYY format
+      date = parse(dateStr, 'dd/MM/yyyy', new Date());
+      if (!isValid(date)) {
+        // Try MM/DD/YYYY format as fallback
+        date = parse(dateStr, 'MM/dd/yyyy', new Date());
+      }
+    } else {
+      // Try ISO format (YYYY-MM-DD)
+      date = parseISO(dateStr);
+    }
+
+    // Check if date is valid
+    if (!isValid(date)) {
+      console.warn('Invalid date for formatting:', dateStr);
+      return dateStr;
+    }
+
+    // Format as DD/MM/YYYY with leading zeros
+    const formatted = format(date, 'dd/MM/yyyy');
+    console.log('Date formatting with date-fns:', {
+      original: dateStr,
+      parsed: date.toISOString(),
+      formatted
+    });
+
+    return formatted;
   } catch (e) {
-    return dateStr
+    console.error('Error formatting date:', e);
+    return dateStr;
   }
 }
 
-// Apply date filter
+// Apply date filter using date-fns
 const applyDateFilter = () => {
   if (!dateFilterValue.value) {
     clearFilter()
     return
   }
 
+  // Log the date value we're filtering with
+  console.log('Applying date filter with value:', dateFilterValue.value)
+
+  // Parse the date using date-fns
+  let dateObj: Date | null = null;
+
+  // Try to parse the date based on its format
+  if (dateFilterValue.value.includes('/')) {
+    // Try DD/MM/YYYY format first
+    dateObj = parse(dateFilterValue.value, 'dd/MM/yyyy', new Date());
+    if (!isValid(dateObj)) {
+      // Try MM/DD/YYYY format as fallback
+      dateObj = parse(dateFilterValue.value, 'MM/dd/yyyy', new Date());
+    }
+  } else {
+    // Try ISO format (YYYY-MM-DD)
+    dateObj = parseISO(dateFilterValue.value);
+  }
+
+  // Check if date is valid
+  if (!isValid(dateObj)) {
+    console.error('Invalid date value:', dateFilterValue.value);
+    return;
+  }
+
+  // Format the date for display
+  const formattedDate = format(dateObj, 'dd/MM/yyyy');
+  console.log('Formatted date for display:', formattedDate);
+
+  // Format the date as ISO string for filtering (YYYY-MM-DD)
+  const isoDate = format(dateObj, 'yyyy-MM-dd');
+
+  // Log date components for debugging
+  console.log('Date components with date-fns:', {
+    original: dateFilterValue.value,
+    parsed: dateObj,
+    formatted: formattedDate,
+    iso: isoDate
+  });
+
   // Create filter config for date
   const filter: FilterConfig = {
     field: props.column.key,
     operator: filterOperator.value as any,
-    value: dateFilterValue.value // ISO format YYYY-MM-DD
+    value: isoDate // ISO format YYYY-MM-DD
   }
 
   // Emit filter update
@@ -278,7 +347,38 @@ watch(() => props.activeFilters, (newFilters) => {
 
         // Handle date filters
         if (props.column.type === 'date' && filter.value) {
-          dateFilterValue.value = typeof filter.value === 'string' ? filter.value : ''
+          // Store the filter operator
+          filterOperator.value = filter.operator || '=';
+          console.log('Setting date filter operator:', filterOperator.value);
+
+          // Convert the date value if needed
+          if (typeof filter.value === 'string') {
+            // If the date is in ISO format (YYYY-MM-DD), use it directly
+            if (filter.value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+              dateFilterValue.value = filter.value;
+            } else {
+              // Try to parse and convert to ISO format
+              try {
+                const date = parseISO(filter.value);
+                if (isValid(date)) {
+                  dateFilterValue.value = format(date, 'yyyy-MM-dd');
+                } else {
+                  dateFilterValue.value = '';
+                }
+              } catch (e) {
+                console.error('Error parsing date from filter:', e);
+                dateFilterValue.value = '';
+              }
+            }
+          } else {
+            dateFilterValue.value = '';
+          }
+
+          console.log('Setting date filter value:', {
+            original: filter.value,
+            converted: dateFilterValue.value,
+            operator: filterOperator.value
+          });
         }
         // Handle boolean filters
         else if (props.column.type === 'boolean' && filter.value !== undefined) {
@@ -397,6 +497,13 @@ const updateMenuPosition = () => {
 };
 
 const applyFilter = () => {
+  // For date fields, use the dateFilterValue
+  if (props.column.type === 'date' && dateFilterValue.value) {
+    // Apply date filter using date-fns
+    applyDateFilter();
+    return;
+  }
+
   // For boolean fields, use the booleanValue
   if (props.column.type === 'boolean' && booleanValue.value !== '') {
     // Convert string value to boolean - VERY IMPORTANT: this must be a real boolean, not a string
