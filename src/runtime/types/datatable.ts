@@ -254,6 +254,12 @@ export interface TableConfig {
   theme?: string;
 
   /**
+   * Row density
+   * @default 'normal'
+   */
+  density?: 'normal' | 'compact';
+
+  /**
    * Custom theme variables
    */
   themeVars?: Record<string, string>;

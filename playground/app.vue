@@ -54,6 +54,7 @@
         :data-source="advancedData"
         :selectable="true"
         @selection-change="onSelectionChange"
+        density="compact"
       />
     </div>
   </div>

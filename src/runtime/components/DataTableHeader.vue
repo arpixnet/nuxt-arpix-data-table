@@ -308,6 +308,12 @@ const toggleSelectAll = (event: Event) => {
   text-overflow: ellipsis;
 }
 
+/* Density styles */
+.density-compact .arpix-data-table-header-cell {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
 .arpix-data-table-header-content {
   display: flex;
   align-items: center;
@@ -379,6 +385,11 @@ const toggleSelectAll = (event: Event) => {
 .arpix-data-table-filters-cell {
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--arpix-border-color);
+}
+
+/* Density styles for filters */
+.density-compact .arpix-data-table-filters-cell {
+  padding: 0.3rem 0.75rem;
 }
 
 .arpix-data-table-active-filters {

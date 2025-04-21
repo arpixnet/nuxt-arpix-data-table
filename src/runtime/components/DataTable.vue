@@ -1,12 +1,17 @@
 <template>
   <div
     class="arpix-data-table"
-    :class="[`theme-${theme}`, tableClass]"
+    :class="[`theme-${theme}`, `density-${density}`, tableClass]"
     :style="themeStyles"
   >
     <!-- Table Controls -->
     <div class="arpix-data-table-controls" v-if="showSearch || $slots.controls">
-      <!-- Search Input -->
+      <!-- Custom Controls Slot (Left Side) -->
+      <div class="arpix-data-table-controls-left">
+        <slot name="controls"></slot>
+      </div>
+
+      <!-- Search Input (Right Side) -->
       <div class="arpix-data-table-search" v-if="showSearch">
         <div class="arpix-data-table-search-container">
           <div class="arpix-data-table-search-input-wrapper">
@@ -41,9 +46,6 @@
           </button>
         </div>
       </div>
-
-      <!-- Custom Controls Slot -->
-      <slot name="controls"></slot>
     </div>
 
     <!-- Main Table -->
@@ -188,6 +190,7 @@ const props = withDefaults(defineProps<{
   // UI options
   tableClass?: string
   theme?: string
+  density?: 'normal' | 'compact'
   themeVars?: Record<string, string>
   showHeader?: boolean
   showFooter?: boolean
@@ -210,6 +213,7 @@ const props = withDefaults(defineProps<{
   selectable: false,
   tableClass: '',
   theme: () => useNuxtApp().$arpixDataTable.config.theme || 'default',
+  density: 'normal',
   themeVars: () => ({}),
   showHeader: true,
   showFooter: true,
@@ -247,6 +251,7 @@ const tableConfig: TableConfig = {
   selectable: props.selectable,
   tableClass: props.tableClass,
   theme: props.theme,
+  density: props.density,
   themeVars: props.themeVars,
   showHeader: props.showHeader,
   showFooter: props.showFooter,
@@ -559,6 +564,17 @@ onMounted(async () => {
   border-bottom: 1px solid var(--arpix-border-color);
 }
 
+.arpix-data-table-controls-left {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.arpix-data-table-search {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .arpix-data-table-search-container {
   display: flex;
   align-items: center;
@@ -634,6 +650,23 @@ onMounted(async () => {
 .arpix-data-table-search-button:focus {
   outline: none;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
+}
+
+/* Responsive styles for mobile */
+@media (max-width: 640px) {
+  .arpix-data-table-controls {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .arpix-data-table-search {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .arpix-data-table-search-container {
+    max-width: 100%;
+  }
 }
 
 .arpix-data-table-wrapper {

@@ -270,6 +270,12 @@ const handleCellClick = (value: any, key: string, row: any) => {
   white-space: nowrap;
 }
 
+/* Density styles */
+.density-compact .arpix-data-table-cell {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.9rem;
+}
+
 .arpix-data-table-selection-cell {
   width: 40px;
   text-align: center;
