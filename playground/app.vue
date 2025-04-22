@@ -55,7 +55,24 @@
         :selectable="true"
         @selection-change="onSelectionChange"
         density="compact"
-      />
+      >
+        <template #footer>
+          <tr>
+            <td :colspan="advancedColumns.length + 1">
+              <div class="custom-footer">
+                <div class="footer-summary">
+                  <span>Total Items: {{ advancedData.length }}</span>
+                  <span>Total Amount: ${{ calculateTotalAmount(advancedData).toFixed(2) }}</span>
+                </div>
+                <div class="footer-actions">
+                  <button class="footer-button">Export Data</button>
+                  <button class="footer-button primary">Add New Item</button>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </template>
+      </ArpixDataTable>
     </div>
   </div>
 </template>
@@ -210,6 +227,11 @@ const advancedData = [
 const onSelectionChange = (selected: any[]) => {
   console.log('Selected items:', selected)
 }
+
+// Calculate total amount for the footer
+const calculateTotalAmount = (items: any[]): number => {
+  return items.reduce((total, item) => total + (item.amount || 0), 0)
+}
 </script>
 
 <style>
@@ -299,5 +321,57 @@ body {
 
 .status-inactive {
   color: #dc2626;
+}
+
+/* Custom footer styles */
+.custom-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background-color: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.footer-summary {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.footer-summary span {
+  font-weight: 500;
+  color: #334155;
+}
+
+.footer-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.footer-button {
+  padding: 0.5rem 1rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.375rem;
+  background-color: white;
+  color: #334155;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.footer-button:hover {
+  background-color: #f1f5f9;
+}
+
+.footer-button.primary {
+  background-color: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}
+
+.footer-button.primary:hover {
+  background-color: #2563eb;
+  border-color: #2563eb;
 }
 </style>
