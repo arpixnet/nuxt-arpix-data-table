@@ -458,6 +458,7 @@ const toggleSelectAll = (event: Event) => {
 .arpix-data-table-filters-cell {
   padding: 0.5rem 1rem;
   border-bottom: 1px solid var(--arpix-border-color);
+  text-align: left; /* Ensure left alignment */
 }
 
 /* Density styles for filters */
@@ -472,43 +473,56 @@ const toggleSelectAll = (event: Event) => {
   }
 
   .arpix-data-table-active-filters {
-    flex-direction: column;
-    align-items: start;
-    justify-content: start;
+    flex-direction: row; /* Keep horizontal layout */
+    align-items: center; /* Center items vertically */
+    justify-content: flex-start; /* Left alignment */
     width: 100%;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+  }
+
+  .arpix-data-table-filters-label {
+    margin-bottom: 0; /* Remove bottom margin */
+    margin-right: 0.5rem; /* Add right margin */
+    align-self: center; /* Center vertically */
   }
 
   .arpix-data-table-filter-tags {
-    margin-top: 0.25rem;
+    margin-top: 0; /* Remove top margin */
+    align-items: center; /* Center vertically */
   }
 
   .arpix-data-table-filter-tag {
-    margin-bottom: 0.25rem;
+    margin-bottom: 0; /* Remove bottom margin */
   }
 }
 
 .arpix-data-table-active-filters {
   display: flex;
-  align-items: start;
+  align-items: center; /* Center items vertically */
   flex-wrap: wrap;
   gap: 0.5rem;
   font-size: 0.875rem;
-  justify-content: start; /* Always align to the left */
+  justify-content: flex-start; /* Always align to the left */
+  width: 100%; /* Ensure full width */
+  margin-bottom: 0; /* Ensure no bottom margin */
 }
 
 .arpix-data-table-filters-label {
   font-weight: 500;
   color: var(--arpix-secondary-color);
   margin-right: 0.5rem;
-  align-self: start;
+  align-self: center; /* Center vertically */
+  display: flex;
+  align-items: center;
 }
 
 .arpix-data-table-filter-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  align-items: start;
+  align-items: center; /* Center vertically */
   justify-content: start;
+  margin-bottom: 0; /* Ensure no bottom margin */
 }
 
 .arpix-data-table-filter-tag {
@@ -521,6 +535,7 @@ const toggleSelectAll = (event: Event) => {
   cursor: pointer;
   transition: background-color 0.2s ease, transform 0.1s ease;
   user-select: none;
+  margin-bottom: 0; /* Ensure no bottom margin */
 }
 
 .arpix-data-table-filter-tag:hover {
@@ -558,6 +573,10 @@ const toggleSelectAll = (event: Event) => {
   font-size: 0.75rem;
   padding: 0.25rem 0.5rem;
   border-radius: 4px;
+  align-self: center; /* Center vertically */
+  display: flex;
+  align-items: center;
+  height: 24px; /* Match height with filter tags */
 }
 
 .arpix-data-table-clear-filters:hover {

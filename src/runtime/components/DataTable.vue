@@ -1097,6 +1097,58 @@ onMounted(async () => {
   display: none;
 }
 
+/* Status badges */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.15rem 0.8rem !important; /* Use !important to ensure this padding is applied */
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+  border: 1px solid;
+}
+
+/* Predefined status styles */
+.status-completed {
+  background-color: #dcfce7;
+  color: #166534;
+  border-color: #166534;
+}
+
+.status-pending {
+  background-color: #fef9c3;
+  color: #854d0e;
+  border-color: #854d0e;
+}
+
+.status-cancelled {
+  background-color: #fee2e2;
+  color: #991b1b;
+  border-color: #991b1b;
+}
+
+/* Additional common status styles */
+.status-active {
+  background-color: #dbeafe;
+  color: #1e40af;
+  border-color: #1e40af;
+}
+
+.status-inactive {
+  background-color: #e5e7eb;
+  color: #4b5563;
+  border-color: #4b5563;
+}
+
+/* Generic status styles for other values */
+.status-badge:not(.status-completed):not(.status-pending):not(.status-cancelled):not(.status-active):not(.status-inactive) {
+  background-color: #f3f4f6;
+  color: #374151;
+  border-color: #374151;
+}
+
 /* Boolean icons */
 .boolean-icon {
   display: inline-block;
@@ -1134,6 +1186,83 @@ onMounted(async () => {
   --arpix-success-color: #4ade80;
   --arpix-warning-color: #fbbf24;
   --arpix-info-color: #38bdf8;
+}
+
+/* Dark theme status badges */
+.arpix-data-table.theme-dark .status-completed {
+  background-color: rgba(22, 101, 52, 0.2);
+  color: #4ade80;
+  border-color: #4ade80;
+}
+
+.arpix-data-table.theme-dark .status-pending {
+  background-color: rgba(133, 77, 14, 0.2);
+  color: #facc15;
+  border-color: #facc15;
+}
+
+.arpix-data-table.theme-dark .status-cancelled {
+  background-color: rgba(153, 27, 27, 0.2);
+  color: #f87171;
+  border-color: #f87171;
+}
+
+.arpix-data-table.theme-dark .status-active {
+  background-color: rgba(30, 64, 175, 0.2);
+  color: #60a5fa;
+  border-color: #60a5fa;
+}
+
+.arpix-data-table.theme-dark .status-inactive {
+  background-color: rgba(75, 85, 99, 0.2);
+  color: #9ca3af;
+  border-color: #9ca3af;
+}
+
+/* Generic dark theme status styles for other values */
+.arpix-data-table.theme-dark .status-badge:not(.status-completed):not(.status-pending):not(.status-cancelled):not(.status-active):not(.status-inactive) {
+  background-color: rgba(55, 65, 81, 0.2);
+  color: #d1d5db;
+  border-color: #d1d5db;
+}
+
+/* Dark theme footer styles */
+.arpix-data-table.theme-dark tfoot {
+  background-color: var(--arpix-background-color);
+  color: var(--arpix-text-color);
+}
+
+.arpix-data-table.theme-dark tfoot td {
+  background-color: var(--arpix-background-color);
+  color: var(--arpix-text-color);
+}
+
+.arpix-data-table.theme-dark .arpix-data-table-footer {
+  background-color: var(--arpix-background-color);
+  color: var(--arpix-text-color);
+  border-top: 1px solid var(--arpix-border-color);
+}
+
+/* Ensure custom content in footer also gets dark theme styles */
+.arpix-data-table.theme-dark .arpix-data-table-footer * {
+  color: var(--arpix-text-color);
+}
+
+.arpix-data-table.theme-dark .arpix-data-table-footer a {
+  color: var(--arpix-primary-color);
+}
+
+.arpix-data-table.theme-dark .arpix-data-table-footer button:not([class*="primary"]) {
+  background-color: var(--arpix-header-background);
+  color: var(--arpix-text-color);
+  border-color: var(--arpix-border-color);
+}
+
+/* Dark theme pagination styles */
+.arpix-data-table.theme-dark .arpix-data-table-pagination-wrapper {
+  background-color: var(--arpix-background-color);
+  color: var(--arpix-text-color);
+  border-top: 1px solid var(--arpix-border-color);
 }
 
 /* Dark theme boolean icons */

@@ -37,6 +37,13 @@ export interface TableColumn {
   enumValues?: string[];
 
   /**
+   * Custom colors for status values
+   * Key is the status value, value is an object with background, text, and border colors
+   * @example { 'active': { background: '#dcfce7', text: '#166534', border: '#166534' } }
+   */
+  statusColors?: Record<string, { background?: string; text?: string; border?: string; }>;
+
+  /**
    * Function to format the cell value before display
    * Note: This will only work on the client-side
    */

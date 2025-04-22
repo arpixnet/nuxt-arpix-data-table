@@ -177,12 +177,30 @@ const formatCellValue = (item: any, column: TableColumn) => {
           case 'currency-format':
             return `$${Number(value).toFixed(2)}`
           case 'status-format':
-            const statusClasses: Record<string, string> = {
-              completed: 'status-completed',
-              pending: 'status-pending',
-              cancelled: 'status-cancelled'
+            // Generate a class name based on the value
+            const statusClass = `status-${value.toString().toLowerCase().replace(/\s+/g, '-')}`
+
+            // Check if custom colors are defined for this status value
+            const hasCustomColors = column.statusColors && column.statusColors[value]
+
+            if (hasCustomColors) {
+              // Use custom inline styles if defined
+              const customColors = column.statusColors[value]
+              const customStyle = [
+                customColors.background ? `background-color: ${customColors.background};` : '',
+                customColors.text ? `color: ${customColors.text};` : '',
+                customColors.border ? `border-color: ${customColors.border};` : ''
+              ].filter(Boolean).join(' ')
+
+              return `<span class="status-badge" style="${customStyle}">${value}</span>`
+            } else {
+              // Use predefined classes as fallback
+              const isInEnumValues = column.enumValues && column.enumValues.includes(value)
+              const predefinedClasses = ['status-completed', 'status-pending', 'status-cancelled', 'status-active', 'status-inactive']
+              const useClass = isInEnumValues || predefinedClasses.includes(statusClass) ? statusClass : ''
+
+              return `<span class="status-badge ${useClass}">${value}</span>`
             }
-            return `<span class="status-badge ${statusClasses[value] || ''}">${value}</span>`
           case 'boolean-format':
             return value
               ? '<span class="boolean-icon boolean-true">✓</span>'

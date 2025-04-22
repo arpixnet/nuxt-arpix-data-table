@@ -57,16 +57,16 @@
         density="compact"
       >
         <template #footer>
-            <div class="custom-footer">
-              <div class="footer-summary">
-                <span>Total Items: {{ advancedData.length }}</span>
-                <span>Total Amount: ${{ calculateTotalAmount(advancedData).toFixed(2) }}</span>
-              </div>
-              <div class="footer-actions">
-                <button class="footer-button">Export Data</button>
-                <button class="footer-button primary">Add New Item</button>
-              </div>
+          <div class="custom-footer">
+            <div class="footer-summary">
+              <span>Total Items: {{ advancedData.length }}</span>
+              <span>Total Amount: ${{ calculateTotalAmount(advancedData).toFixed(2) }}</span>
             </div>
+            <div class="footer-actions">
+              <button class="footer-button">Export Data</button>
+              <button class="footer-button primary">Add New Item</button>
+            </div>
+          </div>
         </template>
       </ArpixDataTable>
     </div>
@@ -81,7 +81,20 @@ const basicColumns: TableColumn[] = [
   { key: 'id', label: 'ID', sortable: true, width: '110px', filterable: true },
   { key: 'name', label: 'Name', sortable: true, filterable: true },
   { key: 'email', label: 'Email', sortable: true, filterable: true },
-  { key: 'status', label: 'Status', sortable: true, filterable: true, enumValues: ['Active', 'Inactive', 'Pending'], type: 'custom' },
+  {
+    key: 'status',
+    label: 'Status',
+    sortable: true,
+    filterable: true,
+    enumValues: ['Active', 'Inactive', 'Pending'],
+    type: 'custom',
+    format: 'status-format',
+    statusColors: {
+      'Active': { background: '#dcfce7', text: '#166534', border: '#166534' },
+      'Inactive': { background: '#f3f4f6', text: '#4b5563', border: '#4b5563' },
+      'Pending': { background: '#fef9c3', text: '#854d0e', border: '#854d0e' }
+    }
+  },
 ]
 
 const basicData = [
@@ -130,7 +143,19 @@ const serverColumns: TableColumn[] = [
   { key: 'name', label: 'Name', sortable: true, filterable: true },
   { key: 'description', label: 'Description', filterable: true },
   { key: 'date', label: 'Date', sortable: true, type: 'date', filterable: true },
-  { key: 'status', label: 'Status', sortable: true, filterable: true, enumValues: ['active', 'inactive'], type: 'custom', format: 'status-format' },
+  {
+    key: 'status',
+    label: 'Status',
+    sortable: true,
+    filterable: true,
+    enumValues: ['active', 'inactive'],
+    type: 'custom',
+    format: 'status-format',
+    statusColors: {
+      active: { background: '#dbeafe', text: '#1e40af', border: '#1e40af' },
+      inactive: { background: '#e5e7eb', text: '#4b5563', border: '#4b5563' },
+    },
+  },
   { key: 'price', label: 'Price', sortable: true, type: 'number', filterable: true },
 ]
 
@@ -166,6 +191,11 @@ const advancedColumns: TableColumn[] = [
     format: 'status-format',
     type: 'custom',
     enumValues: ['completed', 'pending', 'cancelled'],
+    statusColors: {
+      completed: { background: '#dcfce7', text: '#166534', border: '#166534' },
+      pending: { background: '#fef9c3', text: '#854d0e', border: '#854d0e' },
+      cancelled: { background: '#fee2e2', text: '#991b1b', border: '#991b1b' },
+    },
   },
   {
     key: 'isActive',
@@ -290,13 +320,13 @@ body {
 }
 
 /* Status badge styles */
-.status-badge {
+/* .status-badge {
   display: inline-block;
   padding: 0.25rem 0.5rem;
   border-radius: 9999px;
   font-size: 0.75rem;
   font-weight: 500;
-}
+} */
 
 .status-completed {
   background-color: #d1fae5;
@@ -328,8 +358,8 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 0.75rem 1rem;
-  background-color: #f8fafc;
-  border-top: 1px solid #e2e8f0;
+  /* background-color: #f8fafc;
+  border-top: 1px solid #e2e8f0; */
 }
 
 .footer-summary {
