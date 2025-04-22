@@ -42,7 +42,9 @@ export function useDatatable(config: TableConfig) {
 
     try {
       let data: any[] = []
-      console.log('Loading data from source:', config.dataSource)
+      if (config.debug) {
+        console.log('Loading data from source:', config.dataSource)
+      }
 
       // Direct assignment for array data sources to ensure data is loaded
       if (Array.isArray(config.dataSource)) {
@@ -53,7 +55,9 @@ export function useDatatable(config: TableConfig) {
       if (Array.isArray(config.dataSource)) {
         // Array data source
         data = [...config.dataSource]
-        console.log('Array data source, items:', data.length)
+        if (config.debug) {
+          console.log('Array data source, items:', data.length)
+        }
 
         // Apply client-side pagination, sorting, filtering
         if (config.pagination === 'client') {
@@ -70,13 +74,17 @@ export function useDatatable(config: TableConfig) {
             search: state.value.searchQuery
           })
         } catch (error) {
-          console.error('Error calling function data source:', error)
+          if (config.debug) {
+            console.error('Error calling function data source:', error)
+          }
           data = []
         }
       } else if (typeof config.dataSource === 'string') {
         // URL data source (API endpoint)
         const apiResponse = await fetchFromApi(config.dataSource)
-        console.log('API response in loadData:', apiResponse)
+        if (config.debug) {
+          console.log('API response in loadData:', apiResponse)
+        }
 
         // Handle different API response formats
         if (apiResponse && typeof apiResponse === 'object') {
@@ -95,11 +103,15 @@ export function useDatatable(config: TableConfig) {
             }
           } else {
             // Try to extract data from response
-            console.warn('Unexpected API response format:', apiResponse)
+            if (config.debug) {
+              console.warn('Unexpected API response format:', apiResponse)
+            }
             data = []
           }
         } else {
-          console.warn('Invalid API response:', apiResponse)
+          if (config.debug) {
+            console.warn('Invalid API response:', apiResponse)
+          }
           data = []
         }
       } else if (typeof config.dataSource === 'object') {
@@ -109,7 +121,9 @@ export function useDatatable(config: TableConfig) {
 
       // Update state
       state.value.items = data
-      console.log('Data loaded, items:', state.value.items)
+      if (config.debug) {
+        console.log('Data loaded, items:', state.value.items)
+      }
 
       // If server pagination not already handled, update total
       if (config.pagination !== 'server' || state.value.pagination.total === 0) {
@@ -123,7 +137,9 @@ export function useDatatable(config: TableConfig) {
       }
     } catch (error: any) {
       state.value.error = error.message || 'Failed to load data'
-      console.error('Error loading data:', error)
+      if (config.debug) {
+        console.error('Error loading data:', error)
+      }
     } finally {
       state.value.loading = false
     }
@@ -133,36 +149,48 @@ export function useDatatable(config: TableConfig) {
    * Process data client-side (sorting, filtering, pagination)
    */
   const processClientData = (data: any[]): any[] => {
-    console.log('Processing client data, items:', data.length)
+    if (config.debug) {
+      console.log('Processing client data, items:', data.length)
+    }
     let processed = [...data]
 
     // Apply search
     if (state.value.searchQuery) {
       processed = applySearch(processed, state.value.searchQuery)
-      console.log('After search:', processed.length, 'items')
+      if (config.debug) {
+        console.log('After search:', processed.length, 'items')
+      }
     }
 
     // Apply filters
     if (Object.keys(state.value.filters).length > 0) {
-      console.log('Applying filters in processClientData:', state.value.filters)
+      if (config.debug) {
+        console.log('Applying filters in processClientData:', state.value.filters)
 
-      // Debug each filter
-      Object.entries(state.value.filters).forEach(([key, filter]) => {
-        if (typeof filter === 'object' && filter.value === false) {
-          console.log(`Found boolean false filter for ${key}:`, filter);
-        }
-      });
+        // Debug each filter
+        Object.entries(state.value.filters).forEach(([key, filter]) => {
+          if (typeof filter === 'object' && filter.value === false) {
+            console.log(`Found boolean false filter for ${key}:`, filter);
+          }
+        });
+      }
 
       processed = applyFilters(processed, state.value.filters)
-      console.log('After filters:', processed.length, 'items')
+      if (config.debug) {
+        console.log('After filters:', processed.length, 'items')
+      }
     }
 
     // Apply sorting
     if (state.value.sort) {
-      console.log('Applying sort in processClientData:', state.value.sort)
+      if (config.debug) {
+        console.log('Applying sort in processClientData:', state.value.sort)
+      }
       processed = applySorting(processed, state.value.sort)
-      console.log('After sorting:', processed.length, 'items')
-    } else {
+      if (config.debug) {
+        console.log('After sorting:', processed.length, 'items')
+      }
+    } else if (config.debug) {
       console.log('No sort configuration found')
     }
 
@@ -180,11 +208,15 @@ export function useDatatable(config: TableConfig) {
   const applySearch = (data: any[], query: string): any[] => {
     if (!query) return data
 
-    console.log('Applying search with query:', query)
+    if (config.debug) {
+      console.log('Applying search with query:', query)
+    }
 
     // Check if config.columns is defined
     if (!config.columns || !Array.isArray(config.columns)) {
-      console.error('Error: config.columns is undefined or not an array', config)
+      if (config.debug) {
+        console.error('Error: config.columns is undefined or not an array', config)
+      }
       return data
     }
 
@@ -209,11 +241,15 @@ export function useDatatable(config: TableConfig) {
       return col.type === 'number' || col.type === 'boolean' || col.type === 'date';
     });
 
-    console.log('Searchable columns (text only):', searchableColumns.map(col => col.key));
-    console.log('Excluded columns from search:', excludedColumns.map(col => `${col.key} (${col.type})`));
+    if (config.debug) {
+      console.log('Searchable columns (text only):', searchableColumns.map(col => col.key));
+      console.log('Excluded columns from search:', excludedColumns.map(col => `${col.key} (${col.type})`));
+    }
 
     if (searchableColumns.length === 0) {
-      console.warn('No searchable columns found. Make sure columns have filterable: true')
+      if (config.debug) {
+        console.warn('No searchable columns found. Make sure columns have filterable: true')
+      }
       return data
     }
 
@@ -235,11 +271,15 @@ export function useDatatable(config: TableConfig) {
 
         // Skip if the value appears to be a non-string type
         if (typeof value === 'number' || typeof value === 'boolean') {
-          console.log(`Skipping search in column ${column.key}: value is ${typeof value}`, value);
+          if (config.debug) {
+            console.log(`Skipping search in column ${column.key}: value is ${typeof value}`, value);
+          }
           return false;
         }
         if (value instanceof Date) {
-          console.log(`Skipping search in column ${column.key}: value is Date`, value);
+          if (config.debug) {
+            console.log(`Skipping search in column ${column.key}: value is Date`, value);
+          }
           return false;
         }
 
@@ -268,19 +308,23 @@ export function useDatatable(config: TableConfig) {
           const matches = stringValue.includes(lowerQuery)
 
           // For debugging
-          if (matches) {
+          if (matches && config.debug) {
             console.log(`Match found in column ${column.key}:`, { value, query: lowerQuery })
           }
 
           return matches
         } catch (error) {
-          console.error(`Error searching in column ${column.key}:`, error)
+          if (config.debug) {
+            console.error(`Error searching in column ${column.key}:`, error)
+          }
           return false
         }
       })
     })
 
-    console.log(`Search results: ${filteredData.length} items found out of ${data.length}`)
+    if (config.debug) {
+      console.log(`Search results: ${filteredData.length} items found out of ${data.length}`)
+    }
     return filteredData
   }
 
@@ -288,7 +332,9 @@ export function useDatatable(config: TableConfig) {
    * Apply filters to data
    */
   const applyFilters = (data: any[], filters: FilterSet): any[] => {
-    console.log('Applying filters:', filters)
+    if (config.debug) {
+      console.log('Applying filters:', filters)
+    }
 
     if (!filters || Object.keys(filters).length === 0) {
       return data
@@ -468,14 +514,16 @@ export function useDatatable(config: TableConfig) {
         // Check if dates are the same day (ignoring time)
         const equal = isSameDay(itemDateNormalized, filterDateNormalized);
 
-        console.log('Comparing dates with date-fns:', {
-          original: { itemValue, filterValue },
-          parsed: { itemDate, filterDate },
-          normalized: { itemDateNormalized, filterDateNormalized },
-          formatted: { itemFormatted, filterFormatted },
-          equal,
-          operator
-        });
+        if (config.debug) {
+          console.log('Comparing dates with date-fns:', {
+            original: { itemValue, filterValue },
+            parsed: { itemDate, filterDate },
+            normalized: { itemDateNormalized, filterDateNormalized },
+            formatted: { itemFormatted, filterFormatted },
+            equal,
+            operator
+          });
+        }
 
         // For equality and inequality comparisons, we can use isSameDay
         if (operator === '=') {
@@ -605,7 +653,9 @@ export function useDatatable(config: TableConfig) {
     const { field, direction } = sort
     const multiplier = direction === 'asc' ? 1 : -1
 
-    console.log(`Applying sort: ${field} ${direction}`)
+    if (config.debug) {
+      console.log(`Applying sort: ${field} ${direction}`)
+    }
 
     return [...data].sort((a, b) => {
       const aValue = a[field]
@@ -734,7 +784,9 @@ export function useDatatable(config: TableConfig) {
       params.append('with', relationNames)
     }
 
-    console.log(`Fetching data from API: ${url}?${params.toString()}`)
+    if (config.debug) {
+      console.log(`Fetching data from API: ${url}?${params.toString()}`)
+    }
 
     try {
       // Make the request
@@ -745,11 +797,15 @@ export function useDatatable(config: TableConfig) {
       }
 
       const result = await response.json()
-      console.log('API response:', result)
+      if (config.debug) {
+        console.log('API response:', result)
+      }
 
       return result
     } catch (error) {
-      console.error('Error fetching from API:', error)
+      if (config.debug) {
+        console.error('Error fetching from API:', error)
+      }
       throw error
     }
   }
@@ -832,7 +888,9 @@ export function useDatatable(config: TableConfig) {
 
       return await response.json()
     } catch (error) {
-      console.error(`Error fetching relation ${table}:${id}:`, error)
+      if (config.debug) {
+        console.error(`Error fetching relation ${table}:${id}:`, error)
+      }
       return null
     }
   }
@@ -868,7 +926,9 @@ export function useDatatable(config: TableConfig) {
    * Set sort configuration
    */
   const setSort = (sort: SortConfig) => {
-    console.log('Setting sort:', sort)
+    if (config.debug) {
+      console.log('Setting sort:', sort)
+    }
     state.value.sort = sort
 
     // Reload data if using server pagination
@@ -877,7 +937,9 @@ export function useDatatable(config: TableConfig) {
     } else if (Array.isArray(state.value.items) && state.value.items.length > 0) {
       // For client-side sorting, we don't need to reload data
       // The displayItems computed property will automatically update
-      console.log('Client-side sorting applied')
+      if (config.debug) {
+        console.log('Client-side sorting applied')
+      }
     }
   }
 
@@ -885,7 +947,9 @@ export function useDatatable(config: TableConfig) {
    * Set search query
    */
   const setSearch = (query: string) => {
-    console.log('Setting search query:', query)
+    if (config.debug) {
+      console.log('Setting search query:', query)
+    }
     state.value.searchQuery = query
     state.value.pagination.page = 1 // Reset to first page
 
@@ -895,7 +959,9 @@ export function useDatatable(config: TableConfig) {
     } else if (Array.isArray(state.value.items) && state.value.items.length > 0) {
       // For client-side search, we don't need to reload data
       // The displayItems computed property will automatically update
-      console.log('Client-side search applied')
+      if (config.debug) {
+        console.log('Client-side search applied')
+      }
     }
   }
 
@@ -903,7 +969,9 @@ export function useDatatable(config: TableConfig) {
    * Set filters
    */
   const setFilters = (filters: FilterSet) => {
-    console.log('Setting filters:', filters)
+    if (config.debug) {
+      console.log('Setting filters:', filters)
+    }
     state.value.filters = filters
     state.value.pagination.page = 1 // Reset to first page
 
@@ -913,7 +981,9 @@ export function useDatatable(config: TableConfig) {
     } else if (Array.isArray(state.value.items) && state.value.items.length > 0) {
       // For client-side filtering, we don't need to reload data
       // The displayItems computed property will automatically update
-      console.log('Client-side filtering applied')
+      if (config.debug) {
+        console.log('Client-side filtering applied')
+      }
     }
   }
 
@@ -972,7 +1042,9 @@ export function useDatatable(config: TableConfig) {
    */
   const exportData = async (format: 'csv' | 'excel' | 'pdf', options: any = {}) => {
     // This is a placeholder - in a real app, you'd implement export functionality
-    console.log(`Exporting data to ${format}`, options)
+    if (config.debug) {
+      console.log(`Exporting data to ${format}`, options)
+    }
 
     // Example implementation for CSV export
     if (format === 'csv') {

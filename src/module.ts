@@ -37,6 +37,13 @@ export interface ModuleOptions {
    * Custom CSS variables for theming
    */
   themeVars?: Record<string, string>
+
+  /**
+   * Enable debug mode
+   * Shows debug information in the table and console logs
+   * @default false
+   */
+  debug?: boolean
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -53,6 +60,7 @@ export default defineNuxtModule<ModuleOptions>({
     paginationType: 'client',
     searchable: true,
     theme: 'default',
+    debug: false,
   },
   setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)

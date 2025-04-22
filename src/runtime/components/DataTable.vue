@@ -136,14 +136,14 @@
                     <div class="arpix-data-table-empty-text">{{ noDataText }}</div>
                   </div>
                 </div>
-                <div class="arpix-data-table-debug" v-if="debug.displayItems === 0">Debug: {{ debug }}</div>
+                <div class="arpix-data-table-debug" v-if="props.debug && debug.displayItems === 0">Debug: {{ debug }}</div>
               </td>
             </tr>
           </slot>
 
           <template v-else>
             <!-- Debug info -->
-            <tr v-if="debug.displayItems === 0" class="arpix-data-table-debug-row">
+            <tr v-if="props.debug && debug.displayItems === 0" class="arpix-data-table-debug-row">
               <td :colspan="selectable ? visibleColumns.length + 1 : visibleColumns.length" class="arpix-data-table-debug-cell">
                 <div class="arpix-data-table-debug">
                   <p>No data to display. Debug information:</p>
@@ -245,6 +245,7 @@ const props = withDefaults(defineProps<{
   showFooter?: boolean
   showPagination?: boolean
   showSearch?: boolean
+  debug?: boolean
 
   // State
   loading?: boolean
@@ -268,6 +269,7 @@ const props = withDefaults(defineProps<{
   showFooter: true,
   showPagination: true,
   showSearch: true,
+  debug: () => useNuxtApp().$arpixDataTable.config.debug || false,
   loading: false,
   error: '',
   noDataText: 'No data available',
@@ -310,12 +312,15 @@ const tableConfig: TableConfig = {
   error: props.error,
   noDataText: props.noDataText,
   initialSort: props.initialSort,
-  filters: props.initialFilters || {}
+  filters: props.initialFilters || {},
+  debug: props.debug
 }
 
-// Log the table configuration
-console.log('Table config:', tableConfig)
-console.log('Columns:', props.columns)
+// Log the table configuration if debug mode is enabled
+if (props.debug) {
+  console.log('Table config:', tableConfig)
+  console.log('Columns:', props.columns)
+}
 
 // Use the datatable composable
 const {
@@ -352,7 +357,9 @@ watch(() => state.value.searchQuery, (value: string) => {
 })
 const displayItems = computed(() => {
   const items = getDisplayItems()
-  console.log('Display items:', items)
+  if (props.debug) {
+    console.log('Display items:', items)
+  }
   return items
 })
 
@@ -421,7 +428,9 @@ watch(() => props.error, (value: string) => {
 })
 
 watch(() => searchQuery.value, (value: string) => {
-  console.log('Search query changed:', value)
+  if (props.debug) {
+    console.log('Search query changed:', value)
+  }
   // Use setSearch function to update the search query
   setSearch(value)
   emit('search-change', value)
@@ -429,7 +438,7 @@ watch(() => searchQuery.value, (value: string) => {
   // Reset to first page when search changes is handled in setSearch
 
   // Force refresh of display items
-  if (Array.isArray(props.dataSource)) {
+  if (Array.isArray(props.dataSource) && props.debug) {
     console.log('Refreshing display items after search')
     // The displayItems computed property will automatically update
     console.log('Display items after search:', displayItems.value?.length || 0)
@@ -438,10 +447,14 @@ watch(() => searchQuery.value, (value: string) => {
 
 // Watch for changes in dataSource
 watch(() => props.dataSource, (newValue) => {
-  console.log('dataSource changed:', newValue)
+  if (props.debug) {
+    console.log('dataSource changed:', newValue)
+  }
   if (Array.isArray(newValue)) {
     state.value.items = [...newValue]
-    console.log('Updated items from watcher:', state.value.items.length, 'items')
+    if (props.debug) {
+      console.log('Updated items from watcher:', state.value.items.length, 'items')
+    }
   } else {
     loadData()
   }
@@ -449,7 +462,9 @@ watch(() => props.dataSource, (newValue) => {
 
 // Watch for changes in columns
 watch(() => props.columns, (newValue) => {
-  console.log('columns changed:', newValue)
+  if (props.debug) {
+    console.log('columns changed:', newValue)
+  }
   tableConfig.columns = newValue
 }, { deep: true })
 
@@ -457,20 +472,26 @@ watch(() => props.columns, (newValue) => {
 const handleSort = (column: TableColumn) => {
   if (!column.sortable) return
 
-  console.log('Handling sort for column:', column.key)
+  if (props.debug) {
+    console.log('Handling sort for column:', column.key)
+  }
 
   const newSort: SortConfig = {
     field: column.key,
     direction: sort.value?.field === column.key && sort.value?.direction === 'asc' ? 'desc' : 'asc'
   }
 
-  console.log('New sort:', newSort)
+  if (props.debug) {
+    console.log('New sort:', newSort)
+  }
 
   setSort(newSort)
   emit('sort-change', newSort)
 
   // Force refresh of display items
-  console.log('Display items after sort:', displayItems.value?.length || 0)
+  if (props.debug) {
+    console.log('Display items after sort:', displayItems.value?.length || 0)
+  }
 }
 
 const handlePageChange = (page: number) => {
@@ -493,14 +514,18 @@ const handleCellClick = (value: any, key: string, row: any) => {
 
 // Handle search button click or enter key press
 const handleSearch = () => {
-  console.log('Search button clicked or enter pressed, query:', searchQuery.value)
+  if (props.debug) {
+    console.log('Search button clicked or enter pressed, query:', searchQuery.value)
+  }
   setSearch(searchQuery.value)
   emit('search-change', searchQuery.value)
 }
 
 // Clear search input and reset results
 const clearSearch = () => {
-  console.log('Clearing search')
+  if (props.debug) {
+    console.log('Clearing search')
+  }
   searchQuery.value = ''
   setSearch('')
   emit('search-change', '')
@@ -508,7 +533,9 @@ const clearSearch = () => {
 
 // Handle filter updates from the header
 const handleFilterUpdate = (filters: Record<string, any>) => {
-  console.log('Filter update:', filters)
+  if (props.debug) {
+    console.log('Filter update:', filters)
+  }
 
   // Make sure state is initialized before updating filters
   if (state?.value) {
@@ -519,7 +546,7 @@ const handleFilterUpdate = (filters: Record<string, any>) => {
     if (pagination.value?.page !== 1) {
       setPage(1)
     }
-  } else {
+  } else if (props.debug) {
     console.warn('Cannot update filters: state is not initialized yet')
   }
 }
@@ -527,7 +554,9 @@ const handleFilterUpdate = (filters: Record<string, any>) => {
 // Handle select all checkbox
 const handleSelectAll = (checked: boolean) => {
   if (!state?.value) {
-    console.warn('Cannot select items: state is not initialized yet')
+    if (props.debug) {
+      console.warn('Cannot select items: state is not initialized yet')
+    }
     return
   }
 
@@ -544,7 +573,9 @@ const handleSelectAll = (checked: boolean) => {
 
 // Initialize
 onMounted(async () => {
-  console.log('DataTable mounted, initializing with dataSource:', props.dataSource)
+  if (props.debug) {
+    console.log('DataTable mounted, initializing with dataSource:', props.dataSource)
+  }
 
   // Set initial state
   if (state?.value && props.initialSort) {
@@ -557,28 +588,40 @@ onMounted(async () => {
 
   // Make sure state is initialized
   if (!state?.value) {
-    console.error('State is not initialized yet')
+    if (props.debug) {
+      console.error('State is not initialized yet')
+    }
     return
   }
 
   // Direct assignment for array data sources to ensure data is loaded
   if (Array.isArray(props.dataSource)) {
     state.value.items = [...props.dataSource]
-    console.log('Directly assigned array data:', state.value.items.length, 'items')
+    if (props.debug) {
+      console.log('Directly assigned array data:', state.value.items.length, 'items')
+    }
   } else if (typeof props.dataSource === 'string') {
     // Load data from API
-    console.log('Loading data from API:', props.dataSource)
+    if (props.debug) {
+      console.log('Loading data from API:', props.dataSource)
+    }
     try {
       await loadData()
-      console.log('Data loaded from API:', state.value.items.length, 'items')
+      if (props.debug) {
+        console.log('Data loaded from API:', state.value.items.length, 'items')
+      }
     } catch (error) {
-      console.error('Error loading data from API:', error)
+      if (props.debug) {
+        console.error('Error loading data from API:', error)
+      }
       state.value.error = error instanceof Error ? error.message : 'Failed to load data'
     }
   } else {
     // Load data from other sources
     await loadData()
-    console.log('Data loaded:', state.value.items)
+    if (props.debug) {
+      console.log('Data loaded:', state.value.items)
+    }
   }
 
   // Initialize search if needed
@@ -951,15 +994,17 @@ onMounted(async () => {
 .arpix-data-table-debug {
   margin-top: 0.5rem;
   font-size: 0.75rem;
-  color: var(--arpix-secondary-color);
-  opacity: 0.9;
+  color: #4b5563; /* Darker text color for better readability */
   text-align: left;
-  padding: 0 1rem;
+  padding: 0.5rem 1.5rem;
+  background-color: #fff4e5;
+  border-radius: 0.25rem;
 }
 
 .arpix-data-table-debug p {
   margin-bottom: 0.5rem;
   font-weight: bold;
+  color: #374151; /* Even darker for headings */
 }
 
 .arpix-data-table-debug ul {
@@ -969,16 +1014,18 @@ onMounted(async () => {
 
 .arpix-data-table-debug li {
   margin-bottom: 0.25rem;
+  color: #4b5563; /* Consistent with parent */
 }
 
 .arpix-data-table-debug-row {
-  background-color: rgba(255, 244, 229, 0.7);
+  background-color: #fff4e5;
 }
 
 .arpix-data-table-debug-cell {
-  padding: 1rem;
+  padding: 1rem 1.5rem;
   text-align: left;
   border-bottom: 1px solid var(--arpix-border-color);
+  color: #4b5563;
 }
 
 .arpix-data-table-footer {

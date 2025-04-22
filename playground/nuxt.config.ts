@@ -1,15 +1,15 @@
 export default defineNuxtConfig({
   modules: [
-    '../src/module'
+    '../src/module',
   ],
+  devtools: { enabled: true },
+  compatibilityDate: '2025-04-20',
 
   arpixDataTable: {
     perPage: 10,
     paginationType: 'client',
     searchable: true,
-    theme: 'default'
+    theme: 'default',
+    debug: false, // Set to true to enable debug mode
   },
-
-  devtools: { enabled: true },
-  compatibilityDate: '2025-04-20',
 })

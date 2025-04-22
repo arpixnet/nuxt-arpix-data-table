@@ -317,6 +317,13 @@ export interface TableConfig {
    * @default 'No data available'
    */
   noDataText?: string;
+
+  /**
+   * Enable debug mode
+   * Shows debug information in the table and console logs
+   * @default false
+   */
+  debug?: boolean;
 }
 
 /**
