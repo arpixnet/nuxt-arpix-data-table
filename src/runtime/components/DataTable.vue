@@ -204,7 +204,39 @@
         :pagination="pagination"
         :on-page-change="handlePageChange"
       >
+        <template v-if="pagination.total === 0">
+          <div class="arpix-data-table-pagination-empty">
+            <div class="arpix-data-table-pagination-controls">
+              <button class="arpix-data-table-pagination-button" disabled="true" aria-label="Go to first page">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m11 17-5-5 5-5"/>
+                  <path d="m18 17-5-5 5-5"/>
+                </svg>
+              </button>
+              <button class="arpix-data-table-pagination-button" disabled="true" aria-label="Go to previous page">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m15 18-6-6 6-6"/>
+                </svg>
+              </button>
+              <div class="arpix-data-table-pagination-pages">
+                <button class="arpix-data-table-pagination-page arpix-data-table-pagination-page-active">1</button>
+              </div>
+              <button class="arpix-data-table-pagination-button" disabled="true" aria-label="Go to next page">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m9 18 6-6-6-6"/>
+                </svg>
+              </button>
+              <button class="arpix-data-table-pagination-button" disabled="true" aria-label="Go to last page">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="m13 17 5-5-5-5"/>
+                  <path d="m6 17 5-5-5-5"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </template>
         <ArpixDataTablePagination
+          v-else
           :pagination="pagination"
           @page-change="handlePageChange"
         />
@@ -270,7 +302,7 @@ const props = withDefaults(defineProps<{
   showFooter: true,
   showPagination: true,
   showSearch: true,
-  debug: () => useNuxtApp().$arpixDataTable.config.debug || false,
+  debug: () => useNuxtApp().$arpixDataTable?.config?.debug ?? false,
   loading: false,
   error: '',
   noDataText: 'No data available',
@@ -338,7 +370,15 @@ const {
 // Reactive references to state
 const searchQuery = ref('')
 const sort = computed(() => state.value.sort)
-const pagination = computed(() => state.value.pagination)
+
+// Ensure pagination is always defined with default values
+const pagination = computed(() => {
+  if (!state.value?.pagination) {
+    return { page: 1, perPage: props.perPage || 10, total: 0 }
+  }
+  return state.value.pagination
+})
+
 const selected = computed(() => state.value.selected)
 
 // Card view state
@@ -1056,6 +1096,16 @@ onMounted(async () => {
 .mobile-card-view .arpix-data-table-pagination-wrapper {
   width: 100%;
   box-sizing: border-box;
+}
+
+/* Empty pagination styles */
+.arpix-data-table-pagination-empty {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 /* Ensure consistent cell widths */

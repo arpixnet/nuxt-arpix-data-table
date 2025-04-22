@@ -254,7 +254,7 @@ const formatDateForDisplay = (dateStr: string) => {
 
     // Format as DD/MM/YYYY with leading zeros
     const formatted = format(date, 'dd/MM/yyyy');
-    console.log('Date formatting with date-fns:', {
+    if (props.debug) console.log('Date formatting with date-fns:', {
       original: dateStr,
       parsed: date.toISOString(),
       formatted
@@ -275,7 +275,7 @@ const applyDateFilter = () => {
   }
 
   // Log the date value we're filtering with
-  console.log('Applying date filter with value:', dateFilterValue.value)
+  if (props.debug) console.log('Applying date filter with value:', dateFilterValue.value)
 
   // Parse the date using date-fns
   let dateObj: Date | null = null;
@@ -301,13 +301,13 @@ const applyDateFilter = () => {
 
   // Format the date for display
   const formattedDate = format(dateObj, 'dd/MM/yyyy');
-  console.log('Formatted date for display:', formattedDate);
+  if (props.debug) console.log('Formatted date for display:', formattedDate);
 
   // Format the date as ISO string for filtering (YYYY-MM-DD)
   const isoDate = format(dateObj, 'yyyy-MM-dd');
 
   // Log date components for debugging
-  console.log('Date components with date-fns:', {
+  if (props.debug) console.log('Date components with date-fns:', {
     original: dateFilterValue.value,
     parsed: dateObj,
     formatted: formattedDate,
@@ -350,7 +350,7 @@ watch(() => props.activeFilters, (newFilters) => {
         if (props.column.type === 'date' && filter.value) {
           // Store the filter operator
           filterOperator.value = filter.operator || '=';
-          console.log('Setting date filter operator:', filterOperator.value);
+          if (props.debug) console.log('Setting date filter operator:', filterOperator.value);
 
           // Convert the date value if needed
           if (typeof filter.value === 'string') {
@@ -375,7 +375,7 @@ watch(() => props.activeFilters, (newFilters) => {
             dateFilterValue.value = '';
           }
 
-          console.log('Setting date filter value:', {
+          if (props.debug) console.log('Setting date filter value:', {
             original: filter.value,
             converted: dateFilterValue.value,
             operator: filterOperator.value
@@ -384,7 +384,7 @@ watch(() => props.activeFilters, (newFilters) => {
         // Handle boolean filters
         else if (props.column.type === 'boolean' && filter.value !== undefined) {
           booleanValue.value = filter.value === true ? 'true' : 'false'
-          console.log('Setting boolean value from filter:', booleanValue.value)
+          if (props.debug) console.log('Setting boolean value from filter:', booleanValue.value)
         }
         // Handle other filters
         else {
@@ -511,11 +511,13 @@ const applyFilter = () => {
     // Use explicit true/false values to ensure correct comparison
     const boolValue = booleanValue.value === 'true' ? true : false
 
-    console.log('Boolean filter raw value:', booleanValue.value)
-    console.log('Boolean filter converted value:', boolValue)
-    console.log('Boolean filter type:', typeof boolValue)
-    console.log('Boolean filter is true?', boolValue === true)
-    console.log('Boolean filter is false?', boolValue === false)
+    if (props.debug) {
+      console.log('Boolean filter raw value:', booleanValue.value)
+      console.log('Boolean filter converted value:', boolValue)
+      console.log('Boolean filter type:', typeof boolValue)
+      console.log('Boolean filter is true?', boolValue === true)
+      console.log('Boolean filter is false?', boolValue === false)
+    }
 
     // Create filter config with explicit boolean value
     const filter: FilterConfig = {
@@ -524,7 +526,7 @@ const applyFilter = () => {
       value: boolValue
     }
 
-    console.log('Applying boolean filter:', {
+    if (props.debug) console.log('Applying boolean filter:', {
       field: props.column.key,
       value: boolValue,
       valueType: typeof boolValue,
@@ -615,7 +617,7 @@ const clearFilter = () => {
 
 // Handle changes in enum checkbox values
 const onEnumValueChange = () => {
-  console.log('Enum values changed:', selectedEnumValues.value)
+  if (props.debug) console.log('Enum values changed:', selectedEnumValues.value)
   // We don't apply the filter immediately, user needs to click Apply
 }
 

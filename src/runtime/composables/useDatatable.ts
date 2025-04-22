@@ -74,9 +74,7 @@ export function useDatatable(config: TableConfig) {
             search: state.value.searchQuery
           })
         } catch (error) {
-          if (config.debug) {
-            console.error('Error calling function data source:', error)
-          }
+          console.error('Error calling function data source:', error)
           data = []
         }
       } else if (typeof config.dataSource === 'string') {
@@ -288,7 +286,7 @@ export function useDatatable(config: TableConfig) {
           // Check if it matches common date formats
           if (/^\d{4}-\d{2}-\d{2}/.test(value) || // ISO format
               /^\d{2}[\/-]\d{2}[\/-]\d{4}/.test(value)) { // MM/DD/YYYY or DD/MM/YYYY
-            console.log(`Skipping search in column ${column.key}: value looks like a date`, value);
+                if (config.debug) console.log(`Skipping search in column ${column.key}: value looks like a date`, value);
             return false;
           }
         }
@@ -297,7 +295,7 @@ export function useDatatable(config: TableConfig) {
         if (typeof value === 'string' && !isNaN(Number(value)) && value.trim() !== '') {
           // Only skip if it's a pure number (no letters)
           if (/^-?\d+(\.\d+)?$/.test(value)) {
-            console.log(`Skipping search in column ${column.key}: value is numeric string`, value);
+            if (config.debug) console.log(`Skipping search in column ${column.key}: value is numeric string`, value);
             return false;
           }
         }
@@ -344,7 +342,7 @@ export function useDatatable(config: TableConfig) {
       return Object.entries(filters).every(([key, filter]) => {
         // Skip empty filters, but be careful with boolean false values
         if (!filter) {
-          console.log(`Skipping null/undefined filter for ${key}:`, filter);
+          if (config.debug) console.log(`Skipping null/undefined filter for ${key}:`, filter);
           return true;
         }
 
@@ -354,7 +352,7 @@ export function useDatatable(config: TableConfig) {
           const isEmpty = filter.value === undefined || filter.value === null || filter.value === '';
 
           if (isEmpty && !isBooleanFilter) {
-            console.log(`Skipping empty filter for ${key}:`, filter);
+            if (config.debug) console.log(`Skipping empty filter for ${key}:`, filter);
             return true;
           }
         }
@@ -365,7 +363,7 @@ export function useDatatable(config: TableConfig) {
         // Handle simple filters (key: value)
         if (typeof filter !== 'object') {
           const result = compareValues(item[key], filter, '=', column?.type);
-          console.log(`Simple filter for ${key}:`, { itemValue: item[key], filterValue: filter, result });
+          if (config.debug) console.log(`Simple filter for ${key}:`, { itemValue: item[key], filterValue: filter, result });
           return result;
         }
 
@@ -375,13 +373,13 @@ export function useDatatable(config: TableConfig) {
 
         // Special debug for boolean filters
         if (column?.type === 'boolean' || typeof itemValue === 'boolean') {
-          console.log(`Boolean filter check for ${key}:`, {
+          if (config.debug) console.log(`Boolean filter check for ${key}:`, {
             itemValue,
             filterValue: value,
             operator,
             itemValueType: typeof itemValue,
             filterValueType: typeof value,
-            item
+            item,
           });
         }
 
@@ -890,9 +888,7 @@ export function useDatatable(config: TableConfig) {
           // Attach to the item
           item[table] = relationData
         } catch (error) {
-          if (config.debug) {
-            console.error(`Error loading relation ${table}:`, error)
-          }
+          console.error(`Error loading relation ${table}:`, error)
         }
       }
     }
@@ -916,9 +912,7 @@ export function useDatatable(config: TableConfig) {
 
       return await response.json()
     } catch (error) {
-      if (config.debug) {
-        console.error(`Error fetching relation ${table}:${id}:`, error)
-      }
+      console.error(`Error fetching relation ${table}:${id}:`, error)
       return null
     }
   }

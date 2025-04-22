@@ -120,8 +120,17 @@ const totalPages = computed(() => {
   return Math.ceil(props.pagination.total / props.pagination.perPage)
 })
 
-const isFirstPage = computed(() => props.pagination.page <= 1)
-const isLastPage = computed(() => props.pagination.page >= totalPages.value)
+const isFirstPage = computed(() => {
+  // Always consider it first page when there's no data
+  if (!props.pagination.total) return true
+  return props.pagination.page <= 1
+})
+
+const isLastPage = computed(() => {
+  // Always consider it last page when there's no data
+  if (!props.pagination.total) return true
+  return props.pagination.page >= totalPages.value
+})
 
 const startItem = computed(() => {
   if (!props.pagination.total) return 0
@@ -190,7 +199,8 @@ const visiblePages = computed(() => {
 
 // Methods
 const goToPage = (page: number) => {
-  if (page < 1 || page > totalPages.value || page === props.pagination.page) return
+  // Don't navigate if there's no data, page is invalid, or it's the current page
+  if (!props.pagination.total || page < 1 || page > totalPages.value || page === props.pagination.page) return
   emit('page-change', page)
 }
 

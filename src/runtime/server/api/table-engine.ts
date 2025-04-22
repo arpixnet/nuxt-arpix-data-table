@@ -2,6 +2,10 @@ import { defineEventHandler, getQuery, getRouterParam, createError } from 'h3'
 import type { FilterSet, SortConfig, PaginationConfig } from '../../types'
 import { parse, format, isValid, parseISO, isSameDay, startOfDay } from 'date-fns'
 
+// Set debug mode to false by default
+const config = useRuntimeConfig()
+const DEBUG_MODE = config.public.arpixDataTable?.debug || false
+
 /**
  * Main API handler for the data table engine
  */
@@ -66,7 +70,9 @@ export default defineEventHandler(async (event) => {
         })
     }
   } catch (error: any) {
-    console.error('Table engine error:', error)
+    if (DEBUG_MODE) {
+      console.error('Table engine error:', error)
+    }
 
     throw createError({
       statusCode: error.statusCode || 500,
@@ -142,48 +148,54 @@ async function handleDataRequest(event: any, options: {
             itemBoolValue = false;
           }
 
-          console.log('Server comparing boolean values:', {
-            itemValue,
-            itemBoolValue,
-            filterValue: value,
-            boolValue,
-            operator,
-            result: itemBoolValue === boolValue,
-            strictEqual: Object.is(itemBoolValue, boolValue),
-            boolValueType: typeof boolValue,
-            itemBoolValueType: typeof itemBoolValue,
-            boolValueIsTrue: boolValue === true,
-            boolValueIsFalse: boolValue === false,
-            itemBoolValueIsTrue: itemBoolValue === true,
-            itemBoolValueIsFalse: itemBoolValue === false
-          });
+          if (DEBUG_MODE) {
+            console.log('Server comparing boolean values:', {
+              itemValue,
+              itemBoolValue,
+              filterValue: value,
+              boolValue,
+              operator,
+              result: itemBoolValue === boolValue,
+              strictEqual: Object.is(itemBoolValue, boolValue),
+              boolValueType: typeof boolValue,
+              itemBoolValueType: typeof itemBoolValue,
+              boolValueIsTrue: boolValue === true,
+              boolValueIsFalse: boolValue === false,
+              itemBoolValueIsTrue: itemBoolValue === true,
+              itemBoolValueIsFalse: itemBoolValue === false
+            });
+          }
 
           // For boolean values, we need to do an explicit comparison
           if (operator === '=') {
             // Use strict equality for boolean comparison
             const result = itemBoolValue === boolValue;
-            console.log('Boolean equality check:', {
-              itemBoolValue,
-              boolValue,
-              result,
-              itemValueType: typeof itemValue,
-              filterValueType: typeof value,
-              itemBoolValueType: typeof itemBoolValue,
-              boolValueType: typeof boolValue,
-              boolValueIsTrue: boolValue === true,
-              boolValueIsFalse: boolValue === false
-            });
+            if (DEBUG_MODE) {
+              console.log('Boolean equality check:', {
+                itemBoolValue,
+                boolValue,
+                result,
+                itemValueType: typeof itemValue,
+                filterValueType: typeof value,
+                itemBoolValueType: typeof itemBoolValue,
+                boolValueType: typeof boolValue,
+                boolValueIsTrue: boolValue === true,
+                boolValueIsFalse: boolValue === false
+              });
+            }
             return result;
           } else if (operator === '!=') {
             // Use strict inequality for boolean comparison
             const result = itemBoolValue !== boolValue;
-            console.log('Boolean inequality check:', {
-              itemBoolValue,
-              boolValue,
-              result,
-              itemValueType: typeof itemValue,
-              boolValueType: typeof boolValue
-            });
+            if (DEBUG_MODE) {
+              console.log('Boolean inequality check:', {
+                itemBoolValue,
+                boolValue,
+                result,
+                itemValueType: typeof itemValue,
+                boolValueType: typeof boolValue
+              });
+            }
             return result;
           }
 
@@ -238,17 +250,19 @@ async function handleDataRequest(event: any, options: {
                 // Check if dates are the same day (ignoring time)
                 const equal = isSameDay(itemDateNormalized, filterDateNormalized);
 
-                console.log('Server comparing dates with date-fns:', {
-                  original: { itemValue, filterValue: value },
-                  parsed: { itemDate, filterDate },
-                  normalized: { itemDateNormalized, filterDateNormalized },
-                  formatted: {
-                    itemFormatted: format(itemDateNormalized, 'dd/MM/yyyy'),
-                    filterFormatted: format(filterDateNormalized, 'dd/MM/yyyy')
-                  },
-                  equal,
-                  operator
-                });
+                if (DEBUG_MODE) {
+                  console.log('Server comparing dates with date-fns:', {
+                    original: { itemValue, filterValue: value },
+                    parsed: { itemDate, filterDate },
+                    normalized: { itemDateNormalized, filterDateNormalized },
+                    formatted: {
+                      itemFormatted: format(itemDateNormalized, 'dd/MM/yyyy'),
+                      filterFormatted: format(filterDateNormalized, 'dd/MM/yyyy')
+                    },
+                    equal,
+                    operator
+                  });
+                }
 
                 // Handle equality and inequality operators
                 if (operator === '=') {
@@ -266,7 +280,9 @@ async function handleDataRequest(event: any, options: {
                 }
               }
             } catch (e) {
-              console.error('Error comparing dates:', e);
+              if (DEBUG_MODE) {
+                console.error('Error comparing dates:', e);
+              }
             }
           }
         }
