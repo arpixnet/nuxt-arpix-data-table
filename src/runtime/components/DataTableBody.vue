@@ -24,8 +24,12 @@
       :key="column.key"
       class="arpix-data-table-cell"
       :class="[column.class]"
+      :style="getColumnStyle(column)"
       @click.stop="handleCellClick(getCellValue(item, column), column.key, item)"
     >
+      <!-- Mobile Label (only visible in mobile card view) -->
+      <div class="arpix-data-table-mobile-label">{{ column.label }}</div>
+
       <slot :name="`cell(${column.key})`" :value="getCellValue(item, column)" :row="item" :column="column">
         <component
           v-if="column.renderer"
@@ -238,6 +242,17 @@ const handleRowClick = (item: any, index: number) => {
   emit('row-click', item, index)
 }
 
+const getColumnStyle = (column: TableColumn) => {
+  const style: Record<string, string> = {}
+
+  if (column.width) {
+    style.width = column.width
+    style.minWidth = column.width
+  }
+
+  return style
+}
+
 const handleCellClick = (value: any, key: string, row: any) => {
   emit('cell-click', value, key, row)
 }
@@ -268,12 +283,119 @@ const handleCellClick = (value: any, key: string, row: any) => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  position: relative; /* For mobile data labels */
+  min-width: 150px; /* Default minimum width for cells without specified width */
+}
+
+/* Override min-width for cells with explicit width */
+.arpix-data-table-cell[style*="width"] {
+  min-width: auto !important;
 }
 
 /* Density styles */
 .density-compact .arpix-data-table-cell {
   padding: 0.4rem 0.75rem;
   font-size: 0.9rem;
+}
+
+/* Mobile Label (hidden by default) */
+.arpix-data-table-mobile-label {
+  display: none;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: var(--arpix-secondary-color);
+}
+
+/* Mobile responsive styles */
+@media (max-width: 640px) {
+  .arpix-data-table-cell {
+    padding: 0.6rem 0.75rem;
+    /* Allow text to wrap on mobile */
+    white-space: normal;
+    word-break: break-word;
+  }
+
+  /* Ensure touch targets are large enough */
+  .arpix-data-table-row:active {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  /* Card view styles */
+.mobile-card-view table {
+  display: block;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
+  table-layout: auto !important;
+  box-sizing: border-box;
+}
+
+.mobile-card-view thead {
+  display: none;
+}
+
+.mobile-card-view tbody {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
+.mobile-card-view .arpix-data-table-row {
+  display: block;
+  margin-bottom: 1rem;
+  border: 1px solid var(--arpix-border-color);
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  background-color: var(--arpix-background-color);
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden; /* Ensure content doesn't overflow */
+}
+
+.mobile-card-view .arpix-data-table-cell {
+  display: block;
+  width: 100% !important;
+  min-width: auto !important;
+  max-width: 100% !important;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  text-align: left;
+  white-space: normal;
+  box-sizing: border-box;
+  word-break: break-word; /* Allow long words to break */
+}
+
+.mobile-card-view .arpix-data-table-cell:last-child {
+  border-bottom: none;
+}
+
+.mobile-card-view .arpix-data-table-mobile-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--arpix-secondary-color);
+  font-size: 0.9rem;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+  padding-bottom: 0.25rem;
+}
+
+.mobile-card-view .arpix-data-table-selection-cell {
+  width: 100%;
+  text-align: left;
+  padding-left: 0.75rem;
+}
+
+.mobile-card-view .arpix-data-table-wrapper {
+  overflow: visible;
+  margin: 0;
+  padding: 0.5rem;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+}
 }
 
 .arpix-data-table-selection-cell {

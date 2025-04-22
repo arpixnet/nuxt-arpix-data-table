@@ -698,6 +698,33 @@ const handleClickOutside = (event: MouseEvent) => {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   max-height: 400px;
   overflow-y: auto;
+  z-index: 100; /* Ensure it appears above other elements */
+}
+
+/* Mobile responsive styles for filter menu */
+@media (max-width: 640px) {
+  .arpix-data-table-filter-menu {
+    width: 100%;
+    max-width: 320px;
+    position: fixed !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    max-height: 80vh;
+    border-radius: 8px;
+  }
+
+  /* Add overlay background */
+  .arpix-data-table-filter-menu::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: -1;
+  }
 }
 
 .arpix-data-table-filter-header {
@@ -751,6 +778,38 @@ const handleClickOutside = (event: MouseEvent) => {
   display: flex;
   justify-content: space-between;
   margin-top: 1rem;
+}
+
+/* Mobile responsive styles for filter controls */
+@media (max-width: 640px) {
+  .arpix-data-table-filter-content {
+    padding: 0.75rem;
+  }
+
+  .arpix-data-table-filter-select,
+  .arpix-data-table-filter-input {
+    padding: 0.6rem;
+    font-size: 1rem; /* Larger font for better touch targets */
+  }
+
+  .arpix-data-table-filter-apply,
+  .arpix-data-table-filter-clear {
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    min-width: 80px; /* Ensure buttons are large enough to tap */
+  }
+
+  .arpix-data-table-filter-checkbox label,
+  .arpix-data-table-filter-radio label {
+    font-size: 1rem;
+    padding: 0.25rem 0;
+  }
+
+  /* Increase spacing for better touch targets */
+  .arpix-data-table-filter-checkboxes,
+  .arpix-data-table-filter-radio-group {
+    gap: 0.75rem;
+  }
 }
 
 .arpix-data-table-filter-apply,

@@ -1,7 +1,7 @@
 <template>
   <div
     class="arpix-data-table"
-    :class="[`theme-${theme}`, `density-${density}`, tableClass]"
+    :class="[`theme-${theme}`, `density-${density}`, tableClass, {'mobile-card-view': mobileCardViewEnabled}]"
     :style="themeStyles"
   >
     <!-- Table Controls -->
@@ -9,6 +9,18 @@
       <!-- Custom Controls Slot (Left Side) -->
       <div class="arpix-data-table-controls-left">
         <slot name="controls"></slot>
+      </div>
+
+      <!-- View Toggle -->
+      <div class="arpix-data-table-mobile-toggle">
+        <button
+          class="arpix-data-table-view-toggle"
+          @click="toggleMobileCardView"
+          :class="{ 'active': mobileCardViewEnabled }"
+        >
+          <span v-if="mobileCardViewEnabled">Table View</span>
+          <span v-else>Card View</span>
+        </button>
       </div>
 
       <!-- Search Input (Right Side) -->
@@ -285,6 +297,14 @@ const searchQuery = ref('')
 const sort = computed(() => state.value.sort)
 const pagination = computed(() => state.value.pagination)
 const selected = computed(() => state.value.selected)
+
+// Card view state
+const mobileCardViewEnabled = ref(false) // Default to table view
+
+// Toggle between card view and table view
+const toggleMobileCardView = () => {
+  mobileCardViewEnabled.value = !mobileCardViewEnabled.value
+}
 
 // Sync searchQuery with state.searchQuery
 watch(() => state.value.searchQuery, (value: string) => {
@@ -652,12 +672,48 @@ onMounted(async () => {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
 }
 
+/* View toggle button */
+.arpix-data-table-mobile-toggle {
+  display: none; /* Hidden by default */
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+/* Only show toggle button on mobile */
+@media (max-width: 640px) {
+  .arpix-data-table-mobile-toggle {
+    display: flex;
+  }
+}
+
+.arpix-data-table-view-toggle {
+  background-color: var(--arpix-primary-color);
+  color: white;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  min-width: 100px;
+}
+
+.arpix-data-table-view-toggle:hover {
+  background-color: var(--arpix-primary-color-dark, #2563eb);
+}
+
+.arpix-data-table-view-toggle.active {
+  background-color: var(--arpix-secondary-color);
+}
+
 /* Responsive styles for mobile */
 @media (max-width: 640px) {
   .arpix-data-table-controls {
     flex-direction: column;
     gap: 1rem;
   }
+
+
 
   .arpix-data-table-search {
     width: 100%;
@@ -667,12 +723,91 @@ onMounted(async () => {
   .arpix-data-table-search-container {
     max-width: 100%;
   }
+
+  /* Improve touch targets for mobile */
+  .arpix-data-table-search-input {
+    padding: 0.6rem 0.75rem;
+    padding-right: 2.5rem;
+    font-size: 1rem;
+  }
+
+  .arpix-data-table-search-button {
+    height: 42px;
+    width: 42px;
+  }
+
+  /* Add some spacing around the table */
+  .arpix-data-table {
+    padding-bottom: 0.5rem;
+  }
+
+  /* Improve scrolling experience */
+  .arpix-data-table-wrapper {
+    margin: 0;
+    padding: 0;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+  }
+
+
 }
 
 .arpix-data-table-wrapper {
   overflow-x: auto;
   position: relative;
   z-index: 1;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
+  scrollbar-width: thin; /* Firefox */
+  width: 100%;
+}
+
+.arpix-data-table-wrapper table {
+  width: auto;
+  min-width: 100%;
+  table-layout: fixed; /* Use fixed layout to respect column widths */
+}
+
+/* Ensure table is wide enough on mobile */
+@media (max-width: 640px) {
+  /* Normal table view - force horizontal scrolling */
+  .arpix-data-table-wrapper table {
+    min-width: 800px; /* Force horizontal scrolling on mobile */
+    table-layout: auto; /* Allow columns to size based on content and width */
+  }
+
+  /* Card view - prevent horizontal scrolling */
+  .mobile-card-view .arpix-data-table-wrapper table,
+  .mobile-card-view .arpix-data-table-wrapper tfoot,
+  .mobile-card-view .arpix-data-table-wrapper tbody,
+  .mobile-card-view .arpix-data-table-wrapper tr,
+  .mobile-card-view .arpix-data-table-wrapper td {
+    min-width: 100% !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    table-layout: auto !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Custom scrollbar for Webkit browsers */
+.arpix-data-table-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+
+.arpix-data-table-wrapper::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+}
+
+.arpix-data-table-wrapper::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.arpix-data-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .arpix-data-table-table {
@@ -738,11 +873,38 @@ onMounted(async () => {
   border-top: 1px solid var(--arpix-border-color);
 }
 
+/* Ensure footer is full width in card view on mobile */
+.mobile-card-view .arpix-data-table-footer {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  display: block;
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--arpix-border-color);
+  background-color: var(--arpix-background-color);
+}
+
+.mobile-card-view tfoot,
+.mobile-card-view tfoot tr,
+.mobile-card-view tfoot td {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
 .arpix-data-table-pagination-wrapper {
   padding: 0.75rem 1rem;
   border-top: 1px solid var(--arpix-border-color);
   display: flex;
   justify-content: center;
+}
+
+/* Ensure pagination wrapper is full width in card view on mobile */
+.mobile-card-view .arpix-data-table-pagination-wrapper {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Ensure consistent cell widths */
@@ -777,6 +939,34 @@ onMounted(async () => {
 }
 
 /* Theme: default - styles already defined in base styles */
+
+/* Mobile card view styles */
+.mobile-card-view {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.mobile-card-view .arpix-data-table-wrapper {
+  overflow-x: visible;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  padding: 0.5rem 1rem;
+}
+
+/* Ensure table footer is properly displayed in card view */
+.mobile-card-view .arpix-data-table-table {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.mobile-card-view .arpix-data-table-table tfoot {
+  display: block;
+  width: 100%;
+}
 
 /* Theme: dark */
 .arpix-data-table.theme-dark {

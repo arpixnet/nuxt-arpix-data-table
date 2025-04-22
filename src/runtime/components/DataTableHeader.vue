@@ -167,6 +167,7 @@ const getColumnStyle = (column: TableColumn) => {
 
   if (column.width) {
     style.width = column.width
+    style.minWidth = column.width
   }
 
   return style
@@ -306,12 +307,34 @@ const toggleSelectAll = (event: Event) => {
   box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 150px; /* Default minimum width for header cells without specified width */
+}
+
+/* Override min-width for header cells with explicit width */
+.arpix-data-table-header-cell[style*="width"] {
+  min-width: auto !important;
 }
 
 /* Density styles */
 .density-compact .arpix-data-table-header-cell {
   padding: 0.5rem 0.75rem;
   font-size: 0.9rem;
+}
+
+/* Mobile responsive styles */
+@media (max-width: 640px) {
+  .arpix-data-table-header-cell {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.9rem;
+  }
+
+  .arpix-data-table-header-label {
+    max-width: 120px; /* Limit width on mobile */
+  }
+
+  .arpix-data-table-sort-icon {
+    margin-left: 0.25rem;
+  }
 }
 
 .arpix-data-table-header-content {
@@ -390,6 +413,26 @@ const toggleSelectAll = (event: Event) => {
 /* Density styles for filters */
 .density-compact .arpix-data-table-filters-cell {
   padding: 0.3rem 0.75rem;
+}
+
+/* Mobile responsive styles for filters */
+@media (max-width: 640px) {
+  .arpix-data-table-filters-cell {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .arpix-data-table-active-filters {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .arpix-data-table-filter-tags {
+    margin-top: 0.25rem;
+  }
+
+  .arpix-data-table-filter-tag {
+    margin-bottom: 0.25rem;
+  }
 }
 
 .arpix-data-table-active-filters {
