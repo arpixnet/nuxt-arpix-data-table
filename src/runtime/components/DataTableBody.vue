@@ -185,8 +185,8 @@ const formatCellValue = (item: any, column: TableColumn) => {
             return `<span class="status-badge ${statusClasses[value] || ''}">${value}</span>`
           case 'boolean-format':
             return value
-              ? '<span class="status-active">✓</span>'
-              : '<span class="status-inactive">✗</span>'
+              ? '<span class="boolean-icon boolean-true">✓</span>'
+              : '<span class="boolean-icon boolean-false">✗</span>'
         }
       }
     } catch (error) {

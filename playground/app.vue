@@ -116,8 +116,8 @@ const alphaIdData = [
 const booleanColumns: TableColumn[] = [
   { key: 'id', label: 'ID', sortable: true, width: '110px', filterable: true, type: 'number' },
   { key: 'name', label: 'Name', sortable: true, filterable: true },
-  { key: 'active', label: 'Active', sortable: true, filterable: true, type: 'boolean' },
-  { key: 'verified', label: 'Verified', sortable: true, filterable: true, type: 'boolean' }
+  { key: 'active', label: 'Active', sortable: true, filterable: true, type: 'boolean', format: 'boolean-format', align: 'center' },
+  { key: 'verified', label: 'Verified', sortable: true, filterable: true, type: 'boolean' },
 ]
 
 const booleanData = [
@@ -134,7 +134,7 @@ const serverColumns: TableColumn[] = [
   { key: 'name', label: 'Name', sortable: true, filterable: true },
   { key: 'description', label: 'Description', filterable: true },
   { key: 'date', label: 'Date', sortable: true, type: 'date', filterable: true },
-  { key: 'status', label: 'Status', sortable: true, filterable: true, enumValues: ['active', 'inactive'], type: 'custom' },
+  { key: 'status', label: 'Status', sortable: true, filterable: true, enumValues: ['active', 'inactive'], type: 'custom', format: 'status-format' },
   { key: 'price', label: 'Price', sortable: true, type: 'number', filterable: true },
 ]
 
@@ -175,7 +175,7 @@ const advancedColumns: TableColumn[] = [
     key: 'isActive',
     label: 'Active',
     type: 'boolean',
-    filterable: true,
+    filterable: false,
     // Format function will be applied on client-side only
     format: 'boolean-format',
     align: 'center',

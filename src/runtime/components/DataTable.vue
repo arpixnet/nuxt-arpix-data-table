@@ -109,7 +109,7 @@
         <tbody>
           <slot name="loading" v-if="loading">
             <tr class="arpix-data-table-loading-row">
-              <td :colspan="visibleColumns.length" class="arpix-data-table-loading-cell">
+              <td :colspan="selectable ? visibleColumns.length + 1 : visibleColumns.length" class="arpix-data-table-loading-cell">
                 <div class="arpix-data-table-loading">Loading...</div>
               </td>
             </tr>
@@ -117,7 +117,7 @@
 
           <slot name="error" v-else-if="error">
             <tr class="arpix-data-table-error-row">
-              <td :colspan="visibleColumns.length" class="arpix-data-table-error-cell">
+              <td :colspan="selectable ? visibleColumns.length + 1 : visibleColumns.length" class="arpix-data-table-error-cell">
                 <div class="arpix-data-table-error">{{ error }}</div>
               </td>
             </tr>
@@ -125,9 +125,18 @@
 
           <slot name="empty" v-else-if="!displayItems || !displayItems.length">
             <tr class="arpix-data-table-empty-row">
-              <td :colspan="visibleColumns.length" class="arpix-data-table-empty-cell">
-                <div class="arpix-data-table-empty">{{ noDataText }}</div>
-                <div class="arpix-data-table-debug">Debug: {{ debug }}</div>
+              <td :colspan="selectable ? visibleColumns.length + 1 : visibleColumns.length" class="arpix-data-table-empty-cell">
+                <div class="arpix-data-table-empty">
+                  <div class="arpix-data-table-empty-content">
+                    <div class="arpix-data-table-empty-icon">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 512 512">
+                        <path fill="currentColor" d="m426.645 273.941l.022 99.392l-170.667 96l-170.667-96l-.021-97.749l42.667 24.939l.021 47.85l106.667 59.99l-.022-74.027l21.502-13.189l21.165 13.018l.021 74.198L384 348.352l-.021-49.493zM208.019 57.681l47.391 27.99l.59-.338l.263.146l44.881-26.492l179.404 104.569l-45.042 27.651l45.05 26.593l-180.519 105.42l-44.008-27.032l-45.39 27.898l-180.518-105.42l46.046-27.203l-47.552-29.212zM406.934 192l-151.039-83.072L107.892 192l148.003 83.072z"/>
+                      </svg>
+                    </div>
+                    <div class="arpix-data-table-empty-text">{{ noDataText }}</div>
+                  </div>
+                </div>
+                <div class="arpix-data-table-debug" v-if="debug.displayItems === 0">Debug: {{ debug }}</div>
               </td>
             </tr>
           </slot>
@@ -135,7 +144,7 @@
           <template v-else>
             <!-- Debug info -->
             <tr v-if="debug.displayItems === 0" class="arpix-data-table-debug-row">
-              <td :colspan="visibleColumns.length" class="arpix-data-table-debug-cell">
+              <td :colspan="selectable ? visibleColumns.length + 1 : visibleColumns.length" class="arpix-data-table-debug-cell">
                 <div class="arpix-data-table-debug">
                   <p>No data to display. Debug information:</p>
                   <ul>
@@ -875,9 +884,13 @@ onMounted(async () => {
 }
 
 .arpix-data-table-loading-cell,
-.arpix-data-table-error-cell,
-.arpix-data-table-empty-cell {
+.arpix-data-table-error-cell {
   padding: 2rem;
+  text-align: center;
+}
+
+.arpix-data-table-empty-cell {
+  padding: 0;
   text-align: center;
 }
 
@@ -891,6 +904,38 @@ onMounted(async () => {
 
 .arpix-data-table-empty {
   color: var(--arpix-secondary-color);
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+  width: 100%;
+}
+
+.arpix-data-table-empty-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.arpix-data-table-empty-icon {
+  color: #888888;
+}
+
+.arpix-data-table-empty-icon svg {
+  width: 64px;
+  height: 64px;
+  opacity: 0.8;
+}
+
+.arpix-data-table-empty-text {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--arpix-text-color);
+  margin-left: 0.75rem;
+}
+
+/* Dark theme empty state */
+.arpix-data-table.theme-dark .arpix-data-table-empty-icon {
+  color: #94a3b8;
 }
 
 .arpix-data-table-debug {
@@ -899,6 +944,7 @@ onMounted(async () => {
   color: var(--arpix-secondary-color);
   opacity: 0.9;
   text-align: left;
+  padding: 0 1rem;
 }
 
 .arpix-data-table-debug p {
@@ -1041,6 +1087,28 @@ onMounted(async () => {
   width: 100%;
 }
 
+/* Boolean icons */
+.boolean-icon {
+  display: inline-block;
+  font-size: 1.25rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.boolean-true {
+  color: #16a34a;
+}
+
+.boolean-false {
+  color: #dc2626;
+}
+
+@media (max-width: 640px) {
+  .boolean-icon {
+    font-size: 1.5rem;
+  }
+}
+
 /* Theme: dark */
 .arpix-data-table.theme-dark {
   --arpix-primary-color: #3b82f6;
@@ -1056,5 +1124,14 @@ onMounted(async () => {
   --arpix-success-color: #4ade80;
   --arpix-warning-color: #fbbf24;
   --arpix-info-color: #38bdf8;
+}
+
+/* Dark theme boolean icons */
+.arpix-data-table.theme-dark .boolean-true {
+  color: #4ade80;
+}
+
+.arpix-data-table.theme-dark .boolean-false {
+  color: #f87171;
 }
 </style>
