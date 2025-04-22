@@ -114,6 +114,7 @@ const props = defineProps<{
   selectable?: boolean
   selected?: any[]
   items?: any[]
+  debug?: boolean
 }>()
 
 // Define emits
@@ -140,7 +141,7 @@ const hasActiveFilters = computed(() => {
 // Methods
 const isSorted = (column: TableColumn) => {
   const sorted = props.sort && props.sort.field === column.key
-  if (sorted) {
+  if (sorted && props.debug) {
     console.log(`Column ${column.key} is sorted ${props.sort?.direction}`)
   }
   return sorted
@@ -235,16 +236,22 @@ const formatFilterValue = (value: any, type?: string) => {
 
       // Check if date is valid
       if (!date || !isValid(date)) {
-        console.warn('Invalid date for formatting in filter display:', value);
+        if (props.debug) {
+          console.warn('Invalid date for formatting in filter display:', value);
+        }
         return value;
       }
 
       // Format as DD/MM/YYYY with leading zeros
       const formatted = format(date, 'dd/MM/yyyy');
-      console.log('Formatted date for filter display:', { original: value, formatted });
+      if (props.debug) {
+        console.log('Formatted date for filter display:', { original: value, formatted });
+      }
       return formatted;
     } catch (e) {
-      console.error('Error formatting date for filter display:', e);
+      if (props.debug) {
+        console.error('Error formatting date for filter display:', e);
+      }
       return value;
     }
   }
@@ -258,13 +265,17 @@ const formatFilterValue = (value: any, type?: string) => {
 
 const handleSort = (column: TableColumn) => {
   if (column.sortable) {
-    console.log('Header sort clicked:', column.key)
+    if (props.debug) {
+      console.log('Header sort clicked:', column.key)
+    }
     emit('sort', column)
   }
 }
 
 const handleFilterUpdate = (key: string, filter: FilterConfig | null) => {
-  console.log('Filter update:', key, filter)
+  if (props.debug) {
+    console.log('Filter update:', key, filter)
+  }
 
   // Create a new filters object to maintain reactivity
   const newFilters = { ...props.filters }

@@ -98,6 +98,7 @@
               :selectable="selectable"
               :selected="selected"
               :items="displayItems"
+              :debug="props.debug"
               @sort="handleSort"
               @select-all="handleSelectAll"
               @update:filters="handleFilterUpdate"

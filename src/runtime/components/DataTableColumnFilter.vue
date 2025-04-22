@@ -156,6 +156,7 @@ import { format, parse, isValid, parseISO } from 'date-fns'
 const props = defineProps<{
   column: TableColumn
   activeFilters: Record<string, any>
+  debug?: boolean
 }>()
 
 // Define emits
@@ -620,7 +621,9 @@ const onEnumValueChange = () => {
 
 // Handle changes in select dropdown
 const onSelectChange = () => {
-  console.log('Select value changed:', filterValue.value)
+  if (props.debug) {
+    console.log('Select value changed:', filterValue.value)
+  }
   // We don't apply the filter immediately, user needs to click Apply
 }
 
@@ -628,7 +631,9 @@ const onSelectChange = () => {
 
 // Watch filter menu state changes
 watch(() => showFilterMenu.value, (newValue) => {
-  console.log(`Filter ${filterId} menu state changed:`, newValue)
+  if (props.debug) {
+    console.log(`Filter ${filterId} menu state changed:`, newValue)
+  }
 
   // Add or remove click outside handler
   if (newValue) {
@@ -653,7 +658,9 @@ const handleClickOutside = (event: MouseEvent) => {
   const isClickInsideMenu = target.closest('.arpix-data-table-filter-menu');
 
   if (!isClickInsideButton && !isClickInsideMenu) {
-    console.log('Click outside, closing filter menu');
+    if (props.debug) {
+      console.log('Click outside, closing filter menu');
+    }
     showFilterMenu.value = false;
   }
 }

@@ -386,12 +386,16 @@ export function useDatatable(config: TableConfig) {
         }
 
         const result = compareValues(itemValue, value, operator, column?.type);
-        console.log(`Complex filter for ${key}:`, { itemValue, filterValue: value, operator, result });
+        if (config.debug) {
+          console.log(`Complex filter for ${key}:`, { itemValue, filterValue: value, operator, result });
+        }
         return result;
       });
     });
 
-    console.log('Filtered data:', filteredData.length, 'items out of', data.length);
+    if (config.debug) {
+      console.log('Filtered data:', filteredData.length, 'items out of', data.length);
+    }
     return filteredData;
   }
 
@@ -403,7 +407,9 @@ export function useDatatable(config: TableConfig) {
     if (itemValue === null || itemValue === undefined) {
       // Special case for boolean filters with false value
       if (type === 'boolean' && filterValue === false && operator === '=') {
-        console.log('Special case: comparing null/undefined with false');
+        if (config.debug) {
+          console.log('Special case: comparing null/undefined with false');
+        }
         return true; // Consider null/undefined as false for boolean equality
       }
       return operator === '!=' ? filterValue !== null : false
@@ -466,13 +472,17 @@ export function useDatatable(config: TableConfig) {
 
           // If parsing failed, log error
           if (!isValid(itemDate)) {
-            console.error('Failed to parse item date:', itemValue);
+            if (config.debug) {
+              console.error('Failed to parse item date:', itemValue);
+            }
             return false;
           }
         } else if (itemValue instanceof Date) {
           itemDate = itemValue;
         } else {
-          console.error('Invalid date value:', itemValue);
+          if (config.debug) {
+            console.error('Invalid date value:', itemValue);
+          }
           return false;
         }
 
@@ -493,13 +503,17 @@ export function useDatatable(config: TableConfig) {
 
           // If parsing failed, log error
           if (!isValid(filterDate)) {
-            console.error('Failed to parse filter date:', filterValue);
+            if (config.debug) {
+              console.error('Failed to parse filter date:', filterValue);
+            }
             return false;
           }
         } else if (filterValue instanceof Date) {
           filterDate = filterValue;
         } else {
-          console.error('Invalid filter date value:', filterValue);
+          if (config.debug) {
+            console.error('Invalid filter date value:', filterValue);
+          }
           return false;
         }
 
@@ -537,7 +551,9 @@ export function useDatatable(config: TableConfig) {
         itemValue = itemDateNormalized;
         filterValue = filterDateNormalized;
       } catch (e) {
-        console.error('Error converting date values:', e)
+        if (config.debug) {
+          console.error('Error converting date values:', e)
+        }
         return false
       }
     } else if (type === 'boolean') {
@@ -577,31 +593,37 @@ export function useDatatable(config: TableConfig) {
         filterBoolValue = false;
       }
 
-      console.log('Client comparing boolean values:', {
-        itemValue,
-        itemBoolValue,
-        filterValue,
-        filterBoolValue,
-        operator,
-        result: itemBoolValue === filterBoolValue,
-        strictEqual: Object.is(itemBoolValue, filterBoolValue),
-        itemValueType: typeof itemValue,
-        filterValueType: typeof filterValue,
-        itemBoolValueType: typeof itemBoolValue,
-        filterBoolValueType: typeof filterBoolValue
-      });
+      if (config.debug) {
+        console.log('Client comparing boolean values:', {
+          itemValue,
+          itemBoolValue,
+          filterValue,
+          filterBoolValue,
+          operator,
+          result: itemBoolValue === filterBoolValue,
+          strictEqual: Object.is(itemBoolValue, filterBoolValue),
+          itemValueType: typeof itemValue,
+          filterValueType: typeof filterValue,
+          itemBoolValueType: typeof itemBoolValue,
+          filterBoolValueType: typeof filterBoolValue
+        });
+      }
 
       // For boolean values, we need to do an explicit comparison
       // to handle both true and false values correctly
       if (operator === '=') {
         // Use strict equality for boolean comparison
         const result = itemBoolValue === filterBoolValue;
-        console.log('Boolean equality result:', { itemBoolValue, filterBoolValue, result });
+        if (config.debug) {
+          console.log('Boolean equality result:', { itemBoolValue, filterBoolValue, result });
+        }
         return result;
       } else if (operator === '!=') {
         // Use strict inequality for boolean comparison
         const result = itemBoolValue !== filterBoolValue;
-        console.log('Boolean inequality result:', { itemBoolValue, filterBoolValue, result });
+        if (config.debug) {
+          console.log('Boolean inequality result:', { itemBoolValue, filterBoolValue, result });
+        }
         return result;
       }
 
@@ -745,13 +767,15 @@ export function useDatatable(config: TableConfig) {
               // Ensure it's a proper boolean
               processedFilter.value = Boolean(processedFilter.value);
             }
-            console.log('Sending boolean filter to server:', {
-              key,
-              value: processedFilter.value,
-              type: typeof processedFilter.value,
-              valueIsTrue: processedFilter.value === true,
-              valueIsFalse: processedFilter.value === false
-            });
+            if (config.debug) {
+              console.log('Sending boolean filter to server:', {
+                key,
+                value: processedFilter.value,
+                type: typeof processedFilter.value,
+                valueIsTrue: processedFilter.value === true,
+                valueIsFalse: processedFilter.value === false
+              });
+            }
           }
         }
 
@@ -818,7 +842,9 @@ export function useDatatable(config: TableConfig) {
 
     // Check if config.columns is defined
     if (!config.columns || !Array.isArray(config.columns)) {
-      console.error('Error: config.columns is undefined or not an array', config)
+      if (config.debug) {
+        console.error('Error: config.columns is undefined or not an array', config)
+      }
       return
     }
 
@@ -864,7 +890,9 @@ export function useDatatable(config: TableConfig) {
           // Attach to the item
           item[table] = relationData
         } catch (error) {
-          console.error(`Error loading relation ${table}:`, error)
+          if (config.debug) {
+            console.error(`Error loading relation ${table}:`, error)
+          }
         }
       }
     }
