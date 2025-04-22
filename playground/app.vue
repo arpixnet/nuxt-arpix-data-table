@@ -57,20 +57,16 @@
         density="compact"
       >
         <template #footer>
-          <tr>
-            <td :colspan="advancedColumns.length + 1">
-              <div class="custom-footer">
-                <div class="footer-summary">
-                  <span>Total Items: {{ advancedData.length }}</span>
-                  <span>Total Amount: ${{ calculateTotalAmount(advancedData).toFixed(2) }}</span>
-                </div>
-                <div class="footer-actions">
-                  <button class="footer-button">Export Data</button>
-                  <button class="footer-button primary">Add New Item</button>
-                </div>
+            <div class="custom-footer">
+              <div class="footer-summary">
+                <span>Total Items: {{ advancedData.length }}</span>
+                <span>Total Amount: ${{ calculateTotalAmount(advancedData).toFixed(2) }}</span>
               </div>
-            </td>
-          </tr>
+              <div class="footer-actions">
+                <button class="footer-button">Export Data</button>
+                <button class="footer-button primary">Add New Item</button>
+              </div>
+            </div>
         </template>
       </ArpixDataTable>
     </div>
@@ -114,7 +110,7 @@ const alphaIdData = [
 
 // Boolean filter example
 const booleanColumns: TableColumn[] = [
-  { key: 'id', label: 'ID', sortable: true, width: '110px', filterable: true, type: 'number' },
+  { key: 'id', label: 'ID', sortable: true, width: '110px', filterable: true, type: 'number', visible: false },
   { key: 'name', label: 'Name', sortable: true, filterable: true },
   { key: 'active', label: 'Active', sortable: true, filterable: true, type: 'boolean', format: 'boolean-format', align: 'center' },
   { key: 'verified', label: 'Verified', sortable: true, filterable: true, type: 'boolean' },
@@ -130,7 +126,7 @@ const booleanData = [
 
 // Server-side example columns
 const serverColumns: TableColumn[] = [
-  { key: 'id', label: 'ID', sortable: true, width: '110px', filterable: true, type: 'number' },
+  { key: 'id', label: 'ID', sortable: true, width: '110px', filterable: true, type: 'number', visible: false },
   { key: 'name', label: 'Name', sortable: true, filterable: true },
   { key: 'description', label: 'Description', filterable: true },
   { key: 'date', label: 'Date', sortable: true, type: 'date', filterable: true },
@@ -327,6 +323,7 @@ body {
 
 /* Custom footer styles */
 .custom-footer {
+  width: 100% !important;
   display: flex;
   justify-content: space-between;
   align-items: center;

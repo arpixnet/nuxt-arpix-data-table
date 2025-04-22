@@ -178,22 +178,31 @@
 
         <!-- Table Footer -->
         <tfoot v-if="showFooter">
-          <slot name="footer" :columns="visibleColumns">
-            <tr>
-              <td :colspan="visibleColumns.length">
-                <div class="arpix-data-table-footer">
+          <tr>
+            <td :colspan="selectable ? visibleColumns.length + 1 : visibleColumns.length">
+              <div class="arpix-data-table-footer">
+                <slot
+                  name="footer"
+                >
                   <!-- Custom Footer Content -->
-                </div>
-              </td>
-            </tr>
-          </slot>
+                </slot>
+              </div>
+            </td>
+          </tr>
         </tfoot>
       </table>
     </div>
 
     <!-- Pagination -->
-    <div class="arpix-data-table-pagination-wrapper" v-if="showPagination">
-      <slot name="pagination" :pagination="pagination" :onPageChange="handlePageChange">
+    <div
+      v-if="showPagination"
+      class="arpix-data-table-pagination-wrapper"
+    >
+      <slot
+        name="pagination"
+        :pagination="pagination"
+        :on-page-change="handlePageChange"
+      >
         <ArpixDataTablePagination
           :pagination="pagination"
           @page-change="handlePageChange"
@@ -881,6 +890,7 @@ onMounted(async () => {
   border-collapse: collapse;
   table-layout: fixed;
   border-spacing: 0;
+  box-sizing: border-box;
 }
 
 .arpix-data-table-loading-cell,
@@ -972,29 +982,19 @@ onMounted(async () => {
 }
 
 .arpix-data-table-footer {
-  padding: 0.75rem 1rem;
+  padding: 0;
   border-top: 1px solid var(--arpix-border-color);
 }
 
-/* Ensure footer is full width in card view on mobile */
+/* Footer styles in card view on mobile (hidden by tfoot display:none) */
 .mobile-card-view .arpix-data-table-footer {
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0;
-  display: block;
-  padding: 0.75rem 1rem;
-  border-top: 1px solid var(--arpix-border-color);
-  background-color: var(--arpix-background-color);
+  display: none;
 }
 
-.mobile-card-view tfoot,
+/* These styles won't apply since tfoot is hidden in card view, but keeping for consistency */
 .mobile-card-view tfoot tr,
 .mobile-card-view tfoot td {
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+  display: none;
 }
 
 .arpix-data-table-pagination-wrapper {
@@ -1042,6 +1042,17 @@ onMounted(async () => {
   min-width: 180px !important;
 }
 
+/* Fix for tables with selectable=true and columns with visible=false */
+.arpix-data-table-table tr > *:last-child {
+  border-right: none;
+}
+
+/* Fix for tables with selectable=true and columns with visible=false */
+.arpix-data-table-table tr > td:empty,
+.arpix-data-table-table tr > th:empty {
+  display: none;
+}
+
 /* Selection cell has fixed width */
 .arpix-data-table-selection-cell {
   width: 50px !important;
@@ -1083,8 +1094,7 @@ onMounted(async () => {
 }
 
 .mobile-card-view .arpix-data-table-table tfoot {
-  display: block;
-  width: 100%;
+  display: none;
 }
 
 /* Boolean icons */
