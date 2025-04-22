@@ -80,6 +80,12 @@ export interface TableColumn {
   visible?: boolean;
 
   /**
+   * Text alignment for the column
+   * @default 'left'
+   */
+  align?: 'left' | 'center' | 'right';
+
+  /**
    * Custom renderer component name
    */
   renderer?: string;

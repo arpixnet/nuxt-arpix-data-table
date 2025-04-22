@@ -76,6 +76,8 @@
             v-for="(filter, key) in filters"
             :key="key"
             class="arpix-data-table-filter-tag"
+            @click="handleFilterUpdate(String(key), null)"
+            title="Click to remove filter"
           >
             <span class="arpix-data-table-filter-tag-label">
               {{ getColumnLabel(String(key)) }}:
@@ -83,13 +85,9 @@
                 {{ getFilterDisplayValue(String(key), filter) }}
               </span>
             </span>
-            <button
-              class="arpix-data-table-filter-tag-remove"
-              @click="handleFilterUpdate(String(key), null)"
-              title="Remove filter"
-            >
+            <span class="arpix-data-table-filter-tag-remove">
               ×
-            </button>
+            </span>
           </div>
         </div>
         <button
@@ -168,6 +166,10 @@ const getColumnStyle = (column: TableColumn) => {
   if (column.width) {
     style.width = column.width
     style.minWidth = column.width
+  }
+
+  if (column.align) {
+    style.textAlign = column.align
   }
 
   return style
@@ -299,15 +301,17 @@ const toggleSelectAll = (event: Event) => {
 }
 
 .arpix-data-table-header-cell {
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 0.5rem; /* Equal padding on both sides */
   font-weight: 600;
-  text-align: left;
+  text-align: center; /* Center all headers */
   border-bottom: 2px solid var(--arpix-border-color);
+  border-right: 1px solid var(--arpix-border-color); /* Add vertical separator */
   white-space: nowrap;
   box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
   min-width: 150px; /* Default minimum width for header cells without specified width */
+  position: relative; /* For sort icon positioning */
 }
 
 /* Override min-width for header cells with explicit width */
@@ -315,16 +319,21 @@ const toggleSelectAll = (event: Event) => {
   min-width: auto !important;
 }
 
+/* Remove right border from last header cell */
+.arpix-data-table-header-cell:last-child {
+  border-right: none;
+}
+
 /* Density styles */
 .density-compact .arpix-data-table-header-cell {
-  padding: 0.5rem 0.75rem;
+  padding: 0.5rem; /* Equal padding on both sides */
   font-size: 0.9rem;
 }
 
 /* Mobile and tablet responsive styles */
 @media (max-width: 1024px) {
   .arpix-data-table-header-cell {
-    padding: 0.6rem 0.75rem;
+    padding: 0.5rem; /* Equal padding on both sides */
     font-size: 0.9rem;
   }
 
@@ -333,20 +342,22 @@ const toggleSelectAll = (event: Event) => {
   }
 
   .arpix-data-table-sort-icon {
-    margin-left: 0.25rem;
+    right: 0.25rem; /* Adjust position for smaller screens */
   }
 }
 
 .arpix-data-table-header-content {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center; /* Center header content */
   width: 100%;
+  position: relative; /* For sort icon positioning */
 }
 
 .arpix-data-table-header-title {
   display: flex;
   align-items: center;
+  justify-content: center;
   overflow: hidden;
 }
 
@@ -359,7 +370,7 @@ const toggleSelectAll = (event: Event) => {
 .arpix-data-table-header-actions {
   display: flex;
   align-items: center;
-  margin-left: auto;
+  /* Remove margin-left: auto to allow proper centering */
 }
 
 .arpix-data-table-sortable {
@@ -374,12 +385,25 @@ const toggleSelectAll = (event: Event) => {
 .arpix-data-table-sort-icon {
   display: inline-flex;
   align-items: center;
-  margin-left: 0.5rem;
+  position: absolute;
+  right: 0.25rem;
+  /* Position sort icon to the right */
 }
 
 .arpix-data-table-selection-cell {
   width: 40px;
   text-align: center;
+  padding: 0.75rem 0.5rem;
+}
+
+.density-compact .arpix-data-table-selection-cell {
+  padding: 0.5rem;
+}
+
+@media (max-width: 1024px) {
+  .arpix-data-table-selection-cell {
+    padding: 0.5rem;
+  }
 }
 
 .arpix-data-table-select-all {
@@ -423,7 +447,9 @@ const toggleSelectAll = (event: Event) => {
 
   .arpix-data-table-active-filters {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: start;
+    justify-content: start;
+    width: 100%;
   }
 
   .arpix-data-table-filter-tags {
@@ -437,22 +463,26 @@ const toggleSelectAll = (event: Event) => {
 
 .arpix-data-table-active-filters {
   display: flex;
-  align-items: center;
+  align-items: start;
   flex-wrap: wrap;
   gap: 0.5rem;
   font-size: 0.875rem;
+  justify-content: start; /* Always align to the left */
 }
 
 .arpix-data-table-filters-label {
   font-weight: 500;
   color: var(--arpix-secondary-color);
   margin-right: 0.5rem;
+  align-self: start;
 }
 
 .arpix-data-table-filter-tags {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: start;
+  justify-content: start;
 }
 
 .arpix-data-table-filter-tag {
@@ -462,6 +492,14 @@ const toggleSelectAll = (event: Event) => {
   border-radius: 4px;
   padding: 0.25rem 0.5rem;
   font-size: 0.75rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  user-select: none;
+}
+
+.arpix-data-table-filter-tag:hover {
+  background-color: var(--arpix-hover-color);
+  transform: scale(1.02);
 }
 
 .arpix-data-table-filter-tag-label {
@@ -479,17 +517,11 @@ const toggleSelectAll = (event: Event) => {
   width: 16px;
   height: 16px;
   background: transparent;
-  border: none;
   border-radius: 50%;
   color: var(--arpix-secondary-color);
-  cursor: pointer;
   font-size: 1rem;
   line-height: 1;
-  padding: 0;
-}
-
-.arpix-data-table-filter-tag-remove:hover {
-  color: var(--arpix-primary-color);
+  margin-left: 2px;
 }
 
 .arpix-data-table-clear-filters {

@@ -250,6 +250,10 @@ const getColumnStyle = (column: TableColumn) => {
     style.minWidth = column.width
   }
 
+  if (column.align) {
+    style.textAlign = column.align
+  }
+
   return style
 }
 

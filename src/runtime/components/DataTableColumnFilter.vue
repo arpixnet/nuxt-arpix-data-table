@@ -663,7 +663,7 @@ const handleClickOutside = (event: MouseEvent) => {
 .arpix-data-table-column-filter {
   position: relative;
   display: inline-block;
-  margin-left: 0.5rem;
+  margin-left: 0.25rem;
   z-index: 10;
 }
 

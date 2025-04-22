@@ -114,7 +114,7 @@ const alphaIdData = [
 
 // Boolean filter example
 const booleanColumns: TableColumn[] = [
-  { key: 'id', label: 'ID', sortable: true, width: '80px', filterable: true, type: 'number' },
+  { key: 'id', label: 'ID', sortable: true, width: '110px', filterable: true, type: 'number' },
   { key: 'name', label: 'Name', sortable: true, filterable: true },
   { key: 'active', label: 'Active', sortable: true, filterable: true, type: 'boolean' },
   { key: 'verified', label: 'Verified', sortable: true, filterable: true, type: 'boolean' }
@@ -159,6 +159,7 @@ const advancedColumns: TableColumn[] = [
     filterable: true,
     // Format function will be applied on client-side only
     format: 'currency-format',
+    align: 'right',
   },
   {
     key: 'status',
@@ -177,6 +178,7 @@ const advancedColumns: TableColumn[] = [
     filterable: true,
     // Format function will be applied on client-side only
     format: 'boolean-format',
+    align: 'center',
   },
 ]
 
