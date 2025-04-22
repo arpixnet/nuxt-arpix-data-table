@@ -663,7 +663,8 @@ const handleClickOutside = (event: MouseEvent) => {
 .arpix-data-table-column-filter {
   position: relative;
   display: inline-block;
-  margin-left: 0.25rem;
+  margin-left: 0.15rem; /* Reduced margin as requested */
+  margin-right: 1rem; /* Add right margin to avoid overlap with sort icon */
   z-index: 10;
 }
 
@@ -671,14 +672,15 @@ const handleClickOutside = (event: MouseEvent) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px; /* Increased width for better touch target */
+  height: 28px; /* Increased height for better touch target */
   background: transparent;
   border: none;
   border-radius: 4px;
   color: var(--arpix-secondary-color);
   cursor: pointer;
   transition: all 0.2s ease;
+  padding: 4px; /* Add padding for better touch area */
 }
 
 .arpix-data-table-filter-button:hover {
@@ -782,6 +784,16 @@ const handleClickOutside = (event: MouseEvent) => {
 
 /* Mobile responsive styles for filter controls */
 @media (max-width: 640px) {
+  .arpix-data-table-column-filter {
+    margin-left: 0.75rem; /* Even more margin on mobile */
+  }
+
+  .arpix-data-table-filter-button {
+    width: 32px; /* Larger button on mobile */
+    height: 32px; /* Larger button on mobile */
+    padding: 6px; /* More padding for better touch area */
+  }
+
   .arpix-data-table-filter-content {
     padding: 0.75rem;
   }

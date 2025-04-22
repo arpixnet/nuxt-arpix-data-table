@@ -12,15 +12,34 @@
       </div>
 
       <!-- View Toggle -->
-      <div class="arpix-data-table-mobile-toggle">
-        <button
-          class="arpix-data-table-view-toggle"
-          @click="toggleMobileCardView"
-          :class="{ 'active': mobileCardViewEnabled }"
-        >
-          <span v-if="mobileCardViewEnabled">Table View</span>
-          <span v-else>Card View</span>
-        </button>
+      <div class="arpix-data-table-mobile-toggle" v-if="isMobileOrTablet">
+        <div class="arpix-data-table-view-buttons">
+          <button
+            class="arpix-data-table-view-button"
+            :class="{ 'active': !mobileCardViewEnabled }"
+            @click="mobileCardViewEnabled = false"
+            title="Table View"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16">
+              <path fill="currentColor" fill-rule="evenodd" d="M13.5 4v1a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1M15 5V4a2.5 2.5 0 0 0-2.5-2.5h-9A2.5 2.5 0 0 0 1 4v1a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 15 5m-1.5 6v1a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1m1.5 1v-1a2.5 2.5 0 0 0-2.5-2.5h-9A2.5 2.5 0 0 0 1 11v1a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 15 12" clip-rule="evenodd"/>
+            </svg>
+          </button>
+          <button
+            class="arpix-data-table-view-button"
+            :class="{ 'active': mobileCardViewEnabled }"
+            @click="mobileCardViewEnabled = true"
+            title="Card View"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+              <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                <rect width="7" height="7" x="3" y="3" rx="1"/>
+                <rect width="7" height="7" x="3" y="14" rx="1"/>
+                <rect width="7" height="7" x="14" y="3" rx="1"/>
+                <rect width="7" height="7" x="14" y="14" rx="1"/>
+              </g>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Search Input (Right Side) -->
@@ -65,7 +84,7 @@
       <table class="arpix-data-table-table">
         <!-- Column definitions -->
         <colgroup>
-          <col v-if="selectable" style="width: 40px;" />
+          <col v-if="selectable" style="width: 50px; min-width: 50px;" />
           <col v-for="column in visibleColumns" :key="column.key" :style="getColumnStyle(column)" />
         </colgroup>
 
@@ -301,10 +320,11 @@ const selected = computed(() => state.value.selected)
 // Card view state
 const mobileCardViewEnabled = ref(false) // Default to table view
 
-// Toggle between card view and table view
-const toggleMobileCardView = () => {
-  mobileCardViewEnabled.value = !mobileCardViewEnabled.value
-}
+// Check if we're on mobile or tablet
+const isMobileOrTablet = computed(() => {
+  if (typeof window === 'undefined') return false
+  return window.innerWidth <= 1024
+})
 
 // Sync searchQuery with state.searchQuery
 watch(() => state.value.searchQuery, (value: string) => {
@@ -352,6 +372,10 @@ const getColumnStyle = (column: TableColumn) => {
 
   if (column.width) {
     style.width = column.width
+    style.minWidth = column.width // Add minWidth to ensure the column respects the width
+  } else {
+    style.width = '180px' // Default width for columns without specified width
+    style.minWidth = '180px' // Default minimum width for columns without specified width
   }
 
   return style
@@ -672,50 +696,83 @@ onMounted(async () => {
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
 }
 
-/* View toggle button */
+/* View toggle buttons */
 .arpix-data-table-mobile-toggle {
   display: none; /* Hidden by default */
   justify-content: center;
-  margin-bottom: 0.5rem;
+  margin: 0 1rem 0.5rem 0;
 }
 
-/* Only show toggle button on mobile and tablet */
+/* Only show toggle buttons on mobile and tablet */
 @media (max-width: 1024px) {
   .arpix-data-table-mobile-toggle {
     display: flex;
   }
 }
 
-.arpix-data-table-view-toggle {
+.arpix-data-table-view-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.arpix-data-table-view-button {
+  background-color: #f1f5f9;
+  color: #888888;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+}
+
+.arpix-data-table-view-button:hover {
+  background-color: #e2e8f0;
+  color: #666666;
+}
+
+.arpix-data-table-view-button.active {
   background-color: var(--arpix-primary-color);
   color: white;
-  border: none;
-  border-radius: 0.375rem;
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  min-width: 100px;
+  border-color: var(--arpix-primary-color);
 }
 
-.arpix-data-table-view-toggle:hover {
-  background-color: var(--arpix-primary-color-dark, #2563eb);
-}
+/* Responsive styles for mobile */
+@media (max-width: 640px) {
+  .arpix-data-table-view-button {
+    width: 36px;
+    height: 36px;
+  }
 
-.arpix-data-table-view-toggle.active {
-  background-color: var(--arpix-secondary-color);
+  .arpix-data-table-view-button svg {
+    width: 20px;
+    height: 20px;
+  }
 }
 
 /* Responsive styles for mobile and tablet */
 @media (max-width: 1024px) {
   .arpix-data-table-controls {
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 1rem;
   }
 
+  .arpix-data-table-controls-left {
+    order: 2;
+    flex: 1;
+  }
 
+  .arpix-data-table-mobile-toggle {
+    order: 1;
+    margin: 0;
+  }
 
   .arpix-data-table-search {
+    order: 3;
     width: 100%;
     justify-content: center;
   }
@@ -764,7 +821,7 @@ onMounted(async () => {
 }
 
 .arpix-data-table-wrapper table {
-  width: auto;
+  width: 100%;
   min-width: 100%;
   table-layout: fixed; /* Use fixed layout to respect column widths */
 }
@@ -774,7 +831,7 @@ onMounted(async () => {
   /* Normal table view - force horizontal scrolling */
   .arpix-data-table-wrapper table {
     min-width: 800px; /* Force horizontal scrolling on mobile */
-    table-layout: auto; /* Allow columns to size based on content and width */
+    table-layout: fixed; /* Keep fixed layout to respect column widths */
   }
 
   /* Card view - prevent horizontal scrolling */
@@ -911,15 +968,17 @@ onMounted(async () => {
 .arpix-data-table-table th,
 .arpix-data-table-table td {
   box-sizing: border-box;
-  width: auto;
+  width: 180px;
+  min-width: 180px;
   text-align: left;
 }
 
 /* Set width for specific columns */
 .arpix-data-table-table th[style*="width"],
 .arpix-data-table-table td[style*="width"] {
-  min-width: auto;
-  max-width: none;
+  width: attr(style width) !important;
+  min-width: attr(style width) !important;
+  max-width: none !important;
 }
 
 /* Ensure column alignment */
@@ -931,11 +990,25 @@ onMounted(async () => {
   display: table-column;
 }
 
+/* Set default width for columns without specified width */
+.arpix-data-table-table col:not([style*="width"]) {
+  width: 180px !important;
+  min-width: 180px !important;
+}
+
 /* Selection cell has fixed width */
 .arpix-data-table-selection-cell {
-  width: 40px !important;
-  min-width: 40px !important;
-  max-width: 40px !important;
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
+}
+
+@media (max-width: 1024px) {
+  .arpix-data-table-selection-cell {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+  }
 }
 
 /* Theme: default - styles already defined in base styles */

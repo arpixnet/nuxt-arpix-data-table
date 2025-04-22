@@ -41,16 +41,15 @@
           />
         </div>
 
-        <div class="arpix-data-table-header-actions">
-          <!-- Sort Indicator -->
-          <span
-            v-if="column.sortable"
-            class="arpix-data-table-sort-icon"
-            :class="{
-              'arpix-data-table-sort-asc': isSortedAsc(column),
-              'arpix-data-table-sort-desc': isSortedDesc(column)
-            }"
-          >
+        <!-- Sort Indicator (moved outside of header-actions) -->
+        <span
+          v-if="column.sortable"
+          class="arpix-data-table-sort-icon"
+          :class="{
+            'arpix-data-table-sort-asc': isSortedAsc(column),
+            'arpix-data-table-sort-desc': isSortedDesc(column)
+          }"
+        >
             <svg v-if="isSortedAsc(column)" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="m18 15-6-6-6 6"/>
             </svg>
@@ -61,7 +60,6 @@
               <path d="m18 15-6-6-6 6"/>
             </svg>
           </span>
-        </div>
       </div>
     </th>
   </tr>
@@ -310,13 +308,15 @@ const toggleSelectAll = (event: Event) => {
   box-sizing: border-box;
   overflow: hidden;
   text-overflow: ellipsis;
-  min-width: 150px; /* Default minimum width for header cells without specified width */
+  width: 180px !important; /* Set width for header cells without specified width */
+  min-width: 180px !important; /* Set minimum width for header cells without specified width */
   position: relative; /* For sort icon positioning */
 }
 
-/* Override min-width for header cells with explicit width */
+/* Override width for header cells with explicit width */
 .arpix-data-table-header-cell[style*="width"] {
-  min-width: auto !important;
+  width: attr(style width) !important;
+  min-width: attr(style width) !important;
 }
 
 /* Remove right border from last header cell */
@@ -341,6 +341,10 @@ const toggleSelectAll = (event: Event) => {
     max-width: 120px; /* Limit width on mobile */
   }
 
+  .arpix-data-table-header-title {
+    gap: 0.25rem; /* Adjusted gap on mobile for better touch targets while preventing overlap */
+  }
+
   .arpix-data-table-sort-icon {
     right: 0.25rem; /* Adjust position for smaller screens */
   }
@@ -359,6 +363,7 @@ const toggleSelectAll = (event: Event) => {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  gap: 0.15rem; /* Reduced gap between label and filter button */
 }
 
 .arpix-data-table-header-label {
@@ -388,12 +393,16 @@ const toggleSelectAll = (event: Event) => {
   position: absolute;
   right: 0.25rem;
   /* Position sort icon to the right */
+  z-index: 5; /* Ensure it's above other elements */
 }
 
 .arpix-data-table-selection-cell {
-  width: 40px;
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
   text-align: center;
   padding: 0.75rem 0.5rem;
+  vertical-align: middle;
 }
 
 .density-compact .arpix-data-table-selection-cell {
@@ -402,12 +411,29 @@ const toggleSelectAll = (event: Event) => {
 
 @media (max-width: 1024px) {
   .arpix-data-table-selection-cell {
-    padding: 0.5rem;
+    padding: 0.75rem;
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
   }
 }
 
 .arpix-data-table-select-all {
   cursor: pointer;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--arpix-primary-color);
+  margin: 0 auto;
+  display: block;
+  position: relative;
+  border-radius: 4px;
+}
+
+@media (max-width: 1024px) {
+  .arpix-data-table-select-all {
+    width: 24px;
+    height: 24px;
+  }
 }
 
 .arpix-data-table-filtered {

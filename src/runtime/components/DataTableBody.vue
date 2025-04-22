@@ -288,12 +288,14 @@ const handleCellClick = (value: any, key: string, row: any) => {
   text-overflow: ellipsis;
   white-space: nowrap;
   position: relative; /* For mobile data labels */
-  min-width: 150px; /* Default minimum width for cells without specified width */
+  width: 180px !important; /* Set width for cells without specified width */
+  min-width: 180px !important; /* Set minimum width for cells without specified width */
 }
 
-/* Override min-width for cells with explicit width */
+/* Override width for cells with explicit width */
 .arpix-data-table-cell[style*="width"] {
-  min-width: auto !important;
+  width: attr(style width) !important;
+  min-width: attr(style width) !important;
 }
 
 /* Density styles */
@@ -317,11 +319,18 @@ const handleCellClick = (value: any, key: string, row: any) => {
     /* Allow text to wrap on mobile */
     white-space: normal;
     word-break: break-word;
+    width: 180px !important; /* Maintain consistent width on mobile */
+    min-width: 180px !important; /* Maintain consistent minimum width on mobile */
   }
 
   /* Ensure touch targets are large enough */
   .arpix-data-table-row:active {
     background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  /* Override any column alignment in card view */
+  .mobile-card-view .arpix-data-table-cell[style*="text-align"] {
+    text-align: left !important;
   }
 
   /* Card view styles */
@@ -366,7 +375,7 @@ const handleCellClick = (value: any, key: string, row: any) => {
   max-width: 100% !important;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-  text-align: left;
+  text-align: left !important; /* Force left alignment in card view */
   white-space: normal;
   box-sizing: border-box;
   word-break: break-word; /* Allow long words to break */
@@ -384,12 +393,31 @@ const handleCellClick = (value: any, key: string, row: any) => {
   font-size: 0.9rem;
   border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
   padding-bottom: 0.25rem;
+  text-align: left !important; /* Force left alignment for mobile labels */
 }
 
 .mobile-card-view .arpix-data-table-selection-cell {
-  width: 100%;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
   text-align: left;
-  padding-left: 0.75rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.mobile-card-view .arpix-data-table-select {
+  margin: 0 0.5rem 0 0;
+  width: 24px;
+  height: 24px;
+}
+
+.mobile-card-view .arpix-data-table-selection-cell::after {
+  content: 'Select row';
+  font-size: 0.9rem;
+  color: var(--arpix-secondary-color);
+  margin-left: 0.5rem;
 }
 
 .mobile-card-view .arpix-data-table-wrapper {
@@ -403,11 +431,35 @@ const handleCellClick = (value: any, key: string, row: any) => {
 }
 
 .arpix-data-table-selection-cell {
-  width: 40px;
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
   text-align: center;
+  vertical-align: middle;
 }
 
 .arpix-data-table-select {
   cursor: pointer;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--arpix-primary-color);
+  margin: 0 auto;
+  display: block;
+  position: relative;
+  border-radius: 4px;
+}
+
+@media (max-width: 1024px) {
+  .arpix-data-table-selection-cell {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+    padding: 0.75rem;
+  }
+
+  .arpix-data-table-select {
+    width: 24px;
+    height: 24px;
+  }
 }
 </style>
