@@ -679,8 +679,8 @@ onMounted(async () => {
   margin-bottom: 0.5rem;
 }
 
-/* Only show toggle button on mobile */
-@media (max-width: 640px) {
+/* Only show toggle button on mobile and tablet */
+@media (max-width: 1024px) {
   .arpix-data-table-mobile-toggle {
     display: flex;
   }
@@ -706,8 +706,8 @@ onMounted(async () => {
   background-color: var(--arpix-secondary-color);
 }
 
-/* Responsive styles for mobile */
-@media (max-width: 640px) {
+/* Responsive styles for mobile and tablet */
+@media (max-width: 1024px) {
   .arpix-data-table-controls {
     flex-direction: column;
     gap: 1rem;
@@ -769,8 +769,8 @@ onMounted(async () => {
   table-layout: fixed; /* Use fixed layout to respect column widths */
 }
 
-/* Ensure table is wide enough on mobile */
-@media (max-width: 640px) {
+/* Ensure table is wide enough on mobile and tablet */
+@media (max-width: 1024px) {
   /* Normal table view - force horizontal scrolling */
   .arpix-data-table-wrapper table {
     min-width: 800px; /* Force horizontal scrolling on mobile */

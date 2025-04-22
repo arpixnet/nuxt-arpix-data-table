@@ -306,8 +306,8 @@ const handleCellClick = (value: any, key: string, row: any) => {
   color: var(--arpix-secondary-color);
 }
 
-/* Mobile responsive styles */
-@media (max-width: 640px) {
+/* Mobile and tablet responsive styles */
+@media (max-width: 1024px) {
   .arpix-data-table-cell {
     padding: 0.6rem 0.75rem;
     /* Allow text to wrap on mobile */

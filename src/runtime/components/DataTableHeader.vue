@@ -321,8 +321,8 @@ const toggleSelectAll = (event: Event) => {
   font-size: 0.9rem;
 }
 
-/* Mobile responsive styles */
-@media (max-width: 640px) {
+/* Mobile and tablet responsive styles */
+@media (max-width: 1024px) {
   .arpix-data-table-header-cell {
     padding: 0.6rem 0.75rem;
     font-size: 0.9rem;
@@ -415,8 +415,8 @@ const toggleSelectAll = (event: Event) => {
   padding: 0.3rem 0.75rem;
 }
 
-/* Mobile responsive styles for filters */
-@media (max-width: 640px) {
+/* Mobile and tablet responsive styles for filters */
+@media (max-width: 1024px) {
   .arpix-data-table-filters-cell {
     padding: 0.5rem 0.75rem;
   }
