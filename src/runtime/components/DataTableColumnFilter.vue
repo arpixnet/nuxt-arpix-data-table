@@ -34,6 +34,7 @@
             class="arpix-data-table-filter-input"
             placeholder="Filter value..."
             @keyup.enter="applyFilter"
+            @keyup.esc="showFilterMenu = false"
           />
         </div>
 
@@ -53,6 +54,7 @@
             class="arpix-data-table-filter-input"
             placeholder="Filter value..."
             @keyup.enter="applyFilter"
+            @keyup.esc="showFilterMenu = false"
           />
         </div>
 
@@ -68,6 +70,7 @@
             type="date"
             v-model="dateFilterValue"
             class="arpix-data-table-filter-input"
+            @keyup.esc="showFilterMenu = false"
           />
           <div class="arpix-data-table-filter-date-info" v-if="dateFilterValue">
             Selected date: {{ formatDateForDisplay(dateFilterValue) }}
@@ -403,8 +406,7 @@ watch(() => props.activeFilters, (newFilters) => {
   }
 }, { deep: true, immediate: true })
 
-// Global registry for open filter menus
-const openFilterMenus = new Set<string>();
+// We use a custom event system to manage filter menus
 
 // Generate a unique ID for this filter instance
 const filterId = `filter-${Math.random().toString(36).substring(2, 11)}`;
@@ -439,9 +441,12 @@ onMounted(() => {
   }) as EventListener);
 });
 
-// Clean up event listener on unmount
+// Clean up event listeners on unmount
 onUnmounted(() => {
   document.removeEventListener('close-filter-menus', (() => {}) as EventListener);
+  document.removeEventListener('click', handleClickOutside);
+  document.removeEventListener('keydown', handleEscapeKey);
+  window.removeEventListener('resize', updateMenuPosition);
 });
 
 // Toggle filter menu
@@ -631,22 +636,34 @@ const onSelectChange = () => {
 
 
 
+// Handle Escape key press to close filter menu
+const handleEscapeKey = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && showFilterMenu.value) {
+    if (props.debug) {
+      console.log('Escape key pressed, closing filter menu')
+    }
+    showFilterMenu.value = false
+  }
+}
+
 // Watch filter menu state changes
 watch(() => showFilterMenu.value, (newValue) => {
   if (props.debug) {
     console.log(`Filter ${filterId} menu state changed:`, newValue)
   }
 
-  // Add or remove click outside handler
+  // Add or remove event handlers
   if (newValue) {
-    // Add click outside handler after a short delay to prevent immediate closing
+    // Add handlers after a short delay to prevent immediate closing
     setTimeout(() => {
       document.addEventListener('click', handleClickOutside)
+      document.addEventListener('keydown', handleEscapeKey)
       // Update position in case of window resize
       window.addEventListener('resize', updateMenuPosition)
     }, 100)
   } else {
     document.removeEventListener('click', handleClickOutside)
+    document.removeEventListener('keydown', handleEscapeKey)
     window.removeEventListener('resize', updateMenuPosition)
   }
 })

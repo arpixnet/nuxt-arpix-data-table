@@ -51,7 +51,7 @@
               v-model="searchQuery"
               placeholder="Search..."
               class="arpix-data-table-search-input"
-              @input="handleSearch"
+              @keyup.enter="handleSearch"
             />
             <button
               v-if="searchQuery"
@@ -458,23 +458,8 @@ watch(() => props.error, (value: string) => {
   state.value.error = value
 })
 
-watch(() => searchQuery.value, (value: string) => {
-  if (props.debug) {
-    console.log('Search query changed:', value)
-  }
-  // Use setSearch function to update the search query
-  setSearch(value)
-  emit('search-change', value)
-
-  // Reset to first page when search changes is handled in setSearch
-
-  // Force refresh of display items
-  if (Array.isArray(props.dataSource) && props.debug) {
-    console.log('Refreshing display items after search')
-    // The displayItems computed property will automatically update
-    console.log('Display items after search:', displayItems.value?.length || 0)
-  }
-})
+// We don't watch searchQuery changes anymore, search is triggered only on Enter key press
+// This improves performance by not searching while the user is typing
 
 // Watch for changes in dataSource
 watch(() => props.dataSource, (newValue) => {
@@ -543,10 +528,10 @@ const handleCellClick = (value: any, key: string, row: any) => {
   emit('cell-click', value, key, row)
 }
 
-// Handle search input changes
+// Handle search when Enter key is pressed
 const handleSearch = () => {
   if (props.debug) {
-    console.log('Search input changed, query:', searchQuery.value)
+    console.log('Search triggered by Enter key, query:', searchQuery.value)
   }
   setSearch(searchQuery.value)
   emit('search-change', searchQuery.value)
