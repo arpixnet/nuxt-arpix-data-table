@@ -1087,45 +1087,454 @@ export function useDatatable(config: TableConfig) {
   }
 
   /**
-   * Export data to various formats
+   * Interface for export options
    */
-  const exportData = async (format: 'csv' | 'excel' | 'pdf', options: any = {}) => {
-    // This is a placeholder - in a real app, you'd implement export functionality
+  interface ExportOptions {
+    /**
+     * File name for the exported file (without extension)
+     */
+    fileName?: string;
+
+    /**
+     * Columns to include in the export (defaults to all columns)
+     */
+    columns?: TableColumn[];
+
+    /**
+     * Items to export (defaults to current table items)
+     */
+    items?: Record<string, any>[];
+
+    /**
+     * Whether to apply current filters (default: true)
+     */
+    applyFilters?: boolean;
+
+    /**
+     * Whether to apply current search (default: true)
+     */
+    applySearch?: boolean;
+
+    /**
+     * CSV specific options
+     */
+    csv?: {
+      /**
+       * Delimiter character (default: ',')
+       */
+      delimiter?: string;
+
+      /**
+       * Whether to include headers (default: true)
+       */
+      includeHeaders?: boolean;
+    };
+
+    /**
+     * Excel specific options
+     */
+    excel?: {
+      /**
+       * Sheet name (default: 'Data')
+       */
+      sheetName?: string;
+
+      /**
+       * Whether to style headers (default: true)
+       */
+      styleHeaders?: boolean;
+
+      /**
+       * Whether to auto-size columns (default: true)
+       */
+      autoSize?: boolean;
+    };
+
+    /**
+     * PDF specific options
+     */
+    pdf?: {
+      /**
+       * Page orientation (default: 'portrait')
+       */
+      orientation?: 'portrait' | 'landscape';
+
+      /**
+       * Page unit (default: 'mm')
+       */
+      unit?: string;
+
+      /**
+       * Page format (default: 'a4')
+       */
+      format?: string | [number, number];
+
+      /**
+       * Document title (default: 'Data Export')
+       */
+      title?: string;
+
+      /**
+       * Whether to include date (default: true)
+       */
+      includeDate?: boolean;
+    };
+  }
+
+  /**
+   * Export data to various formats (CSV, Excel, PDF)
+   * @param format - The format to export to ('csv', 'excel', 'pdf')
+   * @param options - Configuration options for the export
+   * @param data - Optional data to export. If not provided, will use the current table data
+   * @returns Promise that resolves when the export is complete
+   */
+  const exportData = async (
+    format: 'csv' | 'excel' | 'pdf',
+    options: Partial<ExportOptions> = {},
+    data?: Record<string, any>[]
+  ): Promise<{ success: boolean; format: string; fileName: string }> => {
     if (config.debug) {
-      console.log(`Exporting data to ${format}`, options)
+      console.log(`Exporting data to ${format}`, options);
     }
 
-    // Example implementation for CSV export
-    if (format === 'csv') {
-      const columns = options.columns || config.columns
-      const items = options.items || state.value.items
+    try {
+      // Get data to export
+      const exportItems = data || options.items || state.value.items;
+      const columns = options.columns || config.columns;
+      const fileName = options.fileName || `export_${new Date().toISOString().slice(0, 10)}`;
 
-      // Generate CSV header
-      const header = columns.map((col: TableColumn) => col.label).join(',')
+      // Apply filters, search, and sorting if requested
+      let processedData = exportItems;
+      if (options.applyFilters !== false) {
+        // Apply search if active
+        if (state.value.searchQuery && options.applySearch !== false) {
+          processedData = applySearch(processedData, state.value.searchQuery);
+        }
 
-      // Generate CSV rows
-      const rows = items.map((item: any) => {
-        return columns.map((col: TableColumn) => {
-          const value = item[col.key]
-          return `"${value !== undefined && value !== null ? value : ''}"`
-        }).join(',')
-      })
+        // Apply filters if active
+        if (Object.keys(state.value.filters).length > 0) {
+          processedData = applyFilters(processedData, state.value.filters);
+        }
 
-      // Combine header and rows
-      const csv = [header, ...rows].join('\n')
+        // Apply sorting if active
+        if (state.value.sort) {
+          processedData = applySorting(processedData, state.value.sort);
+        }
+      }
 
-      // Create download link
-      const blob = new Blob([csv], { type: 'text/csv' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = options.fileName || 'export.csv'
-      a.click()
+      // Export based on format
+      if (format === 'csv') {
+        await exportToCSV(processedData, columns, fileName, options);
+      } else if (format === 'excel') {
+        await exportToExcel(processedData, columns, fileName, options);
+      } else if (format === 'pdf') {
+        await exportToPDF(processedData, columns, fileName, options);
+      } else {
+        throw new Error(`Unsupported export format: ${format}`);
+      }
+
+      return { success: true, format, fileName };
+    } catch (error) {
+      if (config.debug) {
+        console.error(`Error exporting data to ${format}:`, error);
+      }
+      throw error;
+    }
+  };
+
+  /**
+   * Export data to CSV format
+   */
+  const exportToCSV = async (
+    data: Record<string, any>[],
+    columns: TableColumn[],
+    fileName: string,
+    options: Partial<ExportOptions>
+  ): Promise<void> => {
+    // Get CSV specific options
+    const csvOptions = options.csv || {};
+    const delimiter = csvOptions.delimiter || ',';
+    const includeHeaders = csvOptions.includeHeaders !== false;
+
+    // Generate CSV header if needed
+    const headerRow = columns.map((col: TableColumn) => col.label).join(delimiter);
+
+    // Generate CSV rows
+    const dataRows = data.map((item: Record<string, any>) => {
+      return columns.map((col: TableColumn) => {
+        let value = item[col.key];
+
+        // Format value based on column type
+        if (col.format) {
+          if (typeof col.format === 'function') {
+            // If format is a function, call it directly
+            value = col.format(value, item);
+          } else if (col.type === 'date' || col.format === 'date-format') {
+            // Handle date formatting
+            if (value) {
+              value = new Date(value).toLocaleDateString();
+            }
+          } else if (col.type === 'boolean' || col.format === 'boolean-format') {
+            // Handle boolean formatting
+            value = value ? 'Yes' : 'No';
+          } else if (col.format === 'currency-format' && typeof value === 'number') {
+            // Handle currency formatting
+            value = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+          } else if (col.format === 'status-format' && col.statusColors && value) {
+            // For status format, just use the raw value
+            value = String(value);
+          }
+        } else if (col.type === 'date' && value) {
+          value = new Date(value).toLocaleDateString();
+        } else if (col.type === 'boolean') {
+          value = value ? 'Yes' : 'No';
+        }
+
+        // Escape quotes and wrap in quotes
+        if (value !== undefined && value !== null) {
+          const stringValue = String(value).replace(/"/g, '""');
+          return `"${stringValue}"`;
+        }
+        return '""';
+      }).join(delimiter);
+    });
+
+    // Combine header and rows
+    const csvContent = includeHeaders
+      ? [headerRow, ...dataRows].join('\n')
+      : dataRows.join('\n');
+
+    // Create download link
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${fileName}.csv`;
+    a.click();
+
+    // Clean up
+    URL.revokeObjectURL(url);
+  };
+
+  /**
+   * Export data to Excel format using ExcelJS
+   */
+  const exportToExcel = async (
+    data: Record<string, any>[],
+    columns: TableColumn[],
+    fileName: string,
+    options: Partial<ExportOptions>
+  ): Promise<void> => {
+    // Get Excel specific options
+    const excelOptions = options.excel || {};
+    const sheetName = excelOptions.sheetName || 'Data';
+    const styleHeaders = excelOptions.styleHeaders !== false;
+    const autoSize = excelOptions.autoSize !== false;
+
+    // Dynamically import ExcelJS only when needed
+    try {
+      // @ts-expect-error - ExcelJS will be loaded dynamically
+      const ExcelJS = await import('exceljs');
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet(sheetName);
+
+      // Add header row
+      const headerRow = worksheet.addRow(columns.map((col) => col.label));
+
+      // Style header row if requested
+      if (styleHeaders) {
+        headerRow.font = { bold: true };
+      }
+
+      // Add data rows
+      data.forEach((item) => {
+        const rowData = columns.map((col) => {
+          let value = item[col.key];
+
+          // Format value based on column type
+          if (col.format && typeof col.format === 'function') {
+            value = col.format(value, item);
+          } else if (col.type === 'date' && value) {
+            value = new Date(value);
+          } else if (col.type === 'boolean') {
+            value = value ? 'Yes' : 'No';
+          }
+
+          return value !== undefined && value !== null ? value : '';
+        });
+
+        worksheet.addRow(rowData);
+      });
+
+      // Auto-size columns if requested
+      if (autoSize) {
+        worksheet.columns.forEach((column: any) => {
+          let maxLength = 0;
+          column.eachCell({ includeEmpty: true }, (cell: any) => {
+            const columnLength = cell.value ? String(cell.value).length : 10;
+            if (columnLength > maxLength) {
+              maxLength = columnLength;
+            }
+          });
+          column.width = Math.min(maxLength + 2, 50); // Maximum width of 50
+        });
+      }
+
+      // Generate Excel file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${fileName}.xlsx`;
+      a.click();
 
       // Clean up
-      URL.revokeObjectURL(url)
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      if (config.debug) {
+        console.error('Error exporting to Excel:', error);
+        console.log('You may need to install the ExcelJS library: npm install exceljs');
+      }
+      throw new Error('Failed to export to Excel. ExcelJS library may be missing.');
     }
-  }
+  };
+
+  /**
+   * Export data to PDF format using jsPDF
+   */
+  const exportToPDF = async (
+    data: Record<string, any>[],
+    columns: TableColumn[],
+    fileName: string,
+    options: Partial<ExportOptions>
+  ): Promise<void> => {
+    // Get PDF specific options
+    const pdfOptions = options.pdf || {};
+    const orientation = pdfOptions.orientation || 'portrait';
+    const unit = pdfOptions.unit || 'mm';
+    const format = pdfOptions.format || 'a4';
+    const title = pdfOptions.title || 'Data Export';
+    const includeDate = pdfOptions.includeDate !== false;
+
+    try {
+      // Dynamically import jsPDF only when needed
+      // @ts-expect-error - jsPDF will be loaded dynamically
+      const jsPDFModule = await import('jspdf');
+      const jsPDF = jsPDFModule.jsPDF || jsPDFModule.default;
+
+      // Create new PDF document
+      const doc = new jsPDF({
+        orientation,
+        unit,
+        format,
+      });
+
+      // Set title
+      doc.setFontSize(18);
+      doc.text(title, 14, 22);
+
+      // Add date if requested
+      if (includeDate) {
+        doc.setFontSize(11);
+        doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 30);
+      }
+
+      // Create table
+      const tableData = [];
+
+      // Add header row
+      tableData.push(columns.map((col) => col.label));
+
+      // Add data rows
+      data.forEach((item) => {
+        const rowData = columns.map((col) => {
+          let value = item[col.key];
+
+          // Format value based on column type
+          if (col.format && typeof col.format === 'function') {
+            value = col.format(value, item);
+          } else if (col.type === 'date' && value) {
+            value = new Date(value).toLocaleDateString();
+          } else if (col.type === 'boolean') {
+            value = value ? 'Yes' : 'No';
+          }
+
+          return value !== undefined && value !== null ? String(value) : '';
+        });
+
+        tableData.push(rowData);
+      });
+
+      // Add table to document
+      doc.setFontSize(10);
+
+      // Check if autoTable plugin is available
+      if (typeof doc.autoTable === 'function') {
+        doc.autoTable({
+          startY: 40,
+          head: [tableData[0]],
+          body: tableData.slice(1),
+          theme: 'grid',
+          styles: {
+            fontSize: 8,
+            cellPadding: 2,
+          },
+          headStyles: {
+            fillColor: [66, 139, 202],
+            textColor: 255,
+          },
+        });
+      } else {
+        // Fallback to simple table if autoTable is not available
+        let y = 40;
+        const rowHeight = 10;
+        const colWidth = 180 / columns.length;
+
+        // Draw header
+        doc.setFillColor(66, 139, 202);
+        doc.setTextColor(255);
+        doc.rect(14, y, 180, rowHeight, 'F');
+
+        tableData[0].forEach((header, i) => {
+          doc.text(String(header), 14 + (i * colWidth), y + 7);
+        });
+
+        // Draw rows
+        doc.setTextColor(0);
+        tableData.slice(1).forEach((row, rowIndex) => {
+          y += rowHeight;
+
+          // Alternate row background
+          if (rowIndex % 2 === 0) {
+            doc.setFillColor(240, 240, 240);
+            doc.rect(14, y, 180, rowHeight, 'F');
+          }
+
+          // Draw cell text
+          row.forEach((cell, i) => {
+            doc.text(String(cell).substring(0, 25), 14 + (i * colWidth), y + 7);
+          });
+        });
+      }
+
+      // Save PDF
+      doc.save(`${fileName}.pdf`);
+    } catch (error: unknown) {
+      if (config.debug) {
+        console.error('Error exporting to PDF:', error);
+        console.log('You may need to install the jsPDF library: npm install jspdf');
+
+        // Check if error has a message property and it includes 'autoTable'
+        if (error instanceof Error && error.message.includes('autoTable')) {
+          console.log('For better tables, install jspdf-autotable: npm install jspdf-autotable');
+        }
+      }
+      throw new Error('Failed to export to PDF. Required libraries may be missing.');
+    }
+  };
 
   // Watch for config changes
   watch(() => config.perPage, (newPerPage) => {

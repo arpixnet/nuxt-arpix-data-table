@@ -38,7 +38,10 @@
   },
   "dependencies": {
     "@nuxt/kit": "^3.16.2",
-    "date-fns": "^4.1.0"
+    "date-fns": "^4.1.0",
+    "exceljs": "^4.4.0",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2"
   },
   "devDependencies": {
     "@nuxt/devtools": "^2.4.0",
