@@ -44,6 +44,29 @@ export interface ModuleOptions {
    * @default false
    */
   debug?: boolean
+
+  /**
+   * Internationalization options
+   */
+  i18n?: {
+    /**
+     * Whether to enable i18n support
+     * @default true
+     */
+    enabled?: boolean
+
+    /**
+     * Default locale to use when no locale is specified
+     * @default 'en'
+     */
+    defaultLocale?: string
+
+    /**
+     * Custom translations for the data table
+     * If not provided, the module will use the translations from @nuxtjs/i18n if available
+     */
+    messages?: Record<string, Record<string, string>>
+  }
 }
 
 export default defineNuxtModule<ModuleOptions>({
@@ -61,6 +84,11 @@ export default defineNuxtModule<ModuleOptions>({
     searchable: true,
     theme: 'default',
     debug: false,
+    i18n: {
+      enabled: true,
+      defaultLocale: 'en',
+      messages: {}
+    }
   },
   setup(options, nuxt) {
     const resolver = createResolver(import.meta.url)

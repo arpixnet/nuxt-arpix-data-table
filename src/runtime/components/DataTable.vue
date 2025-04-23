@@ -18,7 +18,7 @@
             class="arpix-data-table-view-button"
             :class="{ 'active': !mobileCardViewEnabled }"
             @click="mobileCardViewEnabled = false"
-            title="Table View"
+            :title="t('viewModes.table')"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 16 16">
               <path fill="currentColor" fill-rule="evenodd" d="M13.5 4v1a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1M15 5V4a2.5 2.5 0 0 0-2.5-2.5h-9A2.5 2.5 0 0 0 1 4v1a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 15 5m-1.5 6v1a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1h9a1 1 0 0 1 1 1m1.5 1v-1a2.5 2.5 0 0 0-2.5-2.5h-9A2.5 2.5 0 0 0 1 11v1a2.5 2.5 0 0 0 2.5 2.5h9A2.5 2.5 0 0 0 15 12" clip-rule="evenodd"/>
@@ -28,7 +28,7 @@
             class="arpix-data-table-view-button"
             :class="{ 'active': mobileCardViewEnabled }"
             @click="mobileCardViewEnabled = true"
-            title="Card View"
+            :title="t('viewModes.card')"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
               <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
@@ -49,7 +49,7 @@
             <input
               type="text"
               v-model="searchQuery"
-              placeholder="Search..."
+              :placeholder="t('search.placeholder')"
               class="arpix-data-table-search-input"
               @keyup.enter="handleSearch"
             />
@@ -57,7 +57,7 @@
               v-if="searchQuery"
               class="arpix-data-table-search-clear"
               @click="clearSearch"
-              title="Clear search"
+              :title="t('search.clear')"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="18" y1="6" x2="6" y2="18"/>
@@ -101,7 +101,7 @@
           <slot name="loading" v-if="loading">
             <tr class="arpix-data-table-loading-row">
               <td :colspan="selectable ? visibleColumns.length + 1 : visibleColumns.length" class="arpix-data-table-loading-cell">
-                <div class="arpix-data-table-loading">Loading...</div>
+                <div class="arpix-data-table-loading">{{ t('loading') || 'Loading...' }}</div>
               </td>
             </tr>
           </slot>
@@ -243,7 +243,7 @@
 <script lang="ts" setup>
 import { computed, ref, watch, onMounted } from 'vue'
 import { useNuxtApp } from '#app'
-import { useDatatable } from '../composables'
+import { useDatatable, useDataTableI18n } from '../composables'
 import type {
   TableConfig,
   TableColumn,
@@ -300,7 +300,7 @@ const props = withDefaults(defineProps<{
   debug: () => useNuxtApp().$arpixDataTable?.config?.debug ?? false,
   loading: false,
   error: '',
-  noDataText: 'No data available',
+  noDataText: '',
   initialPage: 1
 })
 
@@ -320,6 +320,9 @@ const emit = defineEmits<{
 // Get slots for later use if needed
 // const slots = useSlots()
 
+// Use the i18n composable
+const { t } = useDataTableI18n()
+
 // Create the table configuration
 const tableConfig: TableConfig = {
   columns: props.columns,
@@ -338,7 +341,7 @@ const tableConfig: TableConfig = {
   showSearch: props.showSearch,
   loading: props.loading,
   error: props.error,
-  noDataText: props.noDataText,
+  noDataText: props.noDataText || t('empty.noData'),
   initialSort: props.initialSort,
   filters: props.initialFilters || {},
   debug: props.debug

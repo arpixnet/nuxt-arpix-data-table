@@ -3,7 +3,7 @@
     <!-- Page Info -->
     <div class="arpix-data-table-pagination-info">
       <span v-if="pagination.total">
-        {{ startItem }}-{{ endItem }} of {{ pagination.total }}
+        {{ startItem }}-{{ endItem }} {{ t('pagination.of') }} {{ pagination.total }}
       </span>
     </div>
 
@@ -11,7 +11,7 @@
     <div class="arpix-data-table-pagination-size" v-if="showPageSizeSelector">
       <select v-model="pageSize" class="arpix-data-table-pagination-size-select">
         <option v-for="size in pageSizeOptions" :key="size" :value="size">
-          {{ size }} per page
+          {{ t('pagination.itemsPerPage', { count: size }) }}
         </option>
       </select>
     </div>
@@ -23,7 +23,7 @@
         class="arpix-data-table-pagination-button"
         :disabled="isFirstPage"
         @click="goToFirstPage"
-        aria-label="Go to first page"
+        :aria-label="t('pagination.firstPage')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="m11 17-5-5 5-5"/>
@@ -36,7 +36,7 @@
         class="arpix-data-table-pagination-button"
         :disabled="isFirstPage"
         @click="goToPreviousPage"
-        aria-label="Go to previous page"
+        :aria-label="t('pagination.previousPage')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="m15 18-6-6 6-6"/>
@@ -71,7 +71,7 @@
         class="arpix-data-table-pagination-button"
         :disabled="isLastPage"
         @click="goToNextPage"
-        aria-label="Go to next page"
+        :aria-label="t('pagination.nextPage')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="m9 18 6-6-6-6"/>
@@ -83,7 +83,7 @@
         class="arpix-data-table-pagination-button"
         :disabled="isLastPage"
         @click="goToLastPage"
-        aria-label="Go to last page"
+        :aria-label="t('pagination.lastPage')"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="m13 17 5-5-5-5"/>
@@ -97,6 +97,7 @@
 <script lang="ts" setup>
 import { computed, ref, watch } from 'vue'
 import type { PaginationConfig } from '../types'
+import { useDataTableI18n } from '../composables'
 
 // Define props
 const props = defineProps<{
@@ -110,6 +111,9 @@ const emit = defineEmits<{
   'page-change': [page: number]
   'page-size-change': [pageSize: number]
 }>()
+
+// Use i18n composable
+const { t } = useDataTableI18n()
 
 // Reactive state
 const pageSize = ref(props.pagination.perPage)

@@ -4,7 +4,7 @@
       class="arpix-data-table-filter-button"
       @click.stop="toggleFilterMenu($event)"
       :class="{ 'active': isActive }"
-      :title="isActive ? 'Filter active' : 'Filter column'"
+      :title="isActive ? t('filters.active') : t('filters.column')"
       ref="filterButton"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -15,7 +15,7 @@
     <teleport to="body">
       <div v-if="showFilterMenu" class="arpix-data-table-filter-menu" :style="menuStyle">
       <div class="arpix-data-table-filter-header">
-        <span>Filter: {{ column.label }}</span>
+        <span>{{ t('filters.title') }}: {{ column.label }}</span>
         <button class="arpix-data-table-filter-close" @click.stop="toggleFilterMenu($event)">×</button>
       </div>
 
@@ -23,16 +23,16 @@
         <!-- Text/String filter -->
         <div v-if="!column.type || column.type === 'text'" class="arpix-data-table-filter-group">
           <select v-model="filterOperator" class="arpix-data-table-filter-select">
-            <option value="contains">Contains</option>
-            <option value="=">Equals</option>
-            <option value="startsWith">Starts with</option>
-            <option value="endsWith">Ends with</option>
+            <option value="contains">{{ t('filters.contains') }}</option>
+            <option value="=">{{ t('filters.equals') }}</option>
+            <option value="startsWith">{{ t('filters.startsWith') }}</option>
+            <option value="endsWith">{{ t('filters.endsWith') }}</option>
           </select>
           <input
             type="text"
             v-model="filterValue"
             class="arpix-data-table-filter-input"
-            placeholder="Filter value..."
+            :placeholder="t('filters.filterValue')"
             @keyup.enter="applyFilter"
             @keyup.esc="showFilterMenu = false"
           />
@@ -41,18 +41,18 @@
         <!-- Number filter -->
         <div v-else-if="column.type === 'number'" class="arpix-data-table-filter-group">
           <select v-model="filterOperator" class="arpix-data-table-filter-select">
-            <option value="=">Equals</option>
-            <option value="!=">Not equals</option>
-            <option value=">">Greater than</option>
-            <option value=">=">Greater than or equal</option>
-            <option value="<">Less than</option>
-            <option value="<=">Less than or equal</option>
+            <option value="=">{{ t('filters.equals') }}</option>
+            <option value="!=">{{ t('filters.notEquals') }}</option>
+            <option value=">">{{ t('filters.greaterThan') }}</option>
+            <option value=">=">{{ t('filters.greaterThanOrEquals') }}</option>
+            <option value="<">{{ t('filters.lessThan') }}</option>
+            <option value="<=">{{ t('filters.lessThanOrEquals') }}</option>
           </select>
           <input
             type="number"
             v-model="filterValue"
             class="arpix-data-table-filter-input"
-            placeholder="Filter value..."
+            :placeholder="t('filters.filterValue')"
             @keyup.enter="applyFilter"
             @keyup.esc="showFilterMenu = false"
           />
@@ -61,10 +61,10 @@
         <!-- Date filter -->
         <div v-else-if="column.type === 'date'" class="arpix-data-table-filter-group">
           <select v-model="filterOperator" class="arpix-data-table-filter-select">
-            <option value="=">Equals</option>
-            <option value="!=">Not equals</option>
-            <option value=">">After</option>
-            <option value="<">Before</option>
+            <option value="=">{{ t('filters.equals') }}</option>
+            <option value="!=">{{ t('filters.notEquals') }}</option>
+            <option value=">">{{ t('filters.after') }}</option>
+            <option value="<">{{ t('filters.before') }}</option>
           </select>
           <input
             type="date"
@@ -88,7 +88,7 @@
                 value="true"
                 v-model="booleanValue"
               />
-              <label for="filter-boolean-true">Yes</label>
+              <label for="filter-boolean-true">{{ t('boolean.true') }}</label>
             </div>
             <div class="arpix-data-table-filter-radio">
               <input
@@ -98,7 +98,7 @@
                 value="false"
                 v-model="booleanValue"
               />
-              <label for="filter-boolean-false">No</label>
+              <label for="filter-boolean-false">{{ t('boolean.false') }}</label>
             </div>
           </div>
         </div>
@@ -134,7 +134,7 @@
             class="arpix-data-table-filter-select"
             @change="onSelectChange"
           >
-            <option value="">-- Select --</option>
+            <option value="">{{ t('filters.select') }}</option>
             <option v-for="value in enumValues" :key="value" :value="value">{{ value }}</option>
           </select>
         </div>
@@ -145,14 +145,14 @@
             @click.stop="applyFilter"
             :disabled="!filterValue && selectedEnumValues.length === 0 && !dateFilterValue && !booleanValue"
           >
-            Apply
+            {{ t('filters.apply') }}
           </button>
           <button
             class="arpix-data-table-filter-clear"
             @click.stop="clearFilter"
             :disabled="!isActive"
           >
-            Clear
+            {{ t('filters.clear') }}
           </button>
         </div>
       </div>
@@ -166,6 +166,7 @@ import { ref, computed, watch, onMounted, onUnmounted, reactive } from 'vue'
 import type { TableColumn, FilterConfig } from '../types'
 import { format, parse, isValid, parseISO } from 'date-fns'
 import DataTableRelationFilter from './DataTableRelationFilter.vue'
+import { useDataTableI18n } from '../composables'
 
 // Define props
 const props = defineProps<{
@@ -178,6 +179,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:filter': [key: string, filter: FilterConfig | null]
 }>()
+
+// Use i18n composable
+const { t } = useDataTableI18n()
 
 // State
 const showFilterMenu = ref(false)

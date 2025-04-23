@@ -2,6 +2,12 @@
   <div class="container">
     <h1 class="page-title">Arpix Data Table Demo</h1>
 
+    <div class="i18n-section">
+      <h2 class="section-title">Internationalization (i18n)</h2>
+      <p>Change the language to see the data table in different languages:</p>
+      <LanguageSwitcher />
+    </div>
+
     <div class="example-section">
       <h2 class="section-title">Basic Example</h2>
       <ArpixDataTable

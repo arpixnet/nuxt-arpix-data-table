@@ -7,7 +7,7 @@
         class="arpix-data-table-filter-select"
         @change="onSelectChange"
       >
-        <option value="">-- Select --</option>
+        <option value="">{{ t('filters.select') }}</option>
         <option v-for="option in relationOptions" :key="option.id" :value="option.id">
           {{ option.name }}
         </option>
@@ -16,7 +16,7 @@
         v-if="relationOptions.length === 0"
         class="arpix-data-table-relation-reload"
         @click="loadRelationOptions()"
-        title="Reload options"
+        :title="t('filters.reload')"
       >
         ↻
       </button>
@@ -37,6 +37,7 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import type { TableColumn } from '../types'
 import { useRelationLabels } from '../composables/useRelationLabels'
+import { useDataTableI18n } from '../composables'
 
 // Define props
 const props = defineProps<{
@@ -45,6 +46,9 @@ const props = defineProps<{
   debug?: boolean
   apiEndpoint?: string
 }>()
+
+// Use i18n composable
+const { t } = useDataTableI18n()
 
 // Debug mode
 const showDebugInfo = computed(() => props.debug === true)

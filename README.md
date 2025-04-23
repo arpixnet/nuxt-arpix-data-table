@@ -20,6 +20,7 @@ A highly configurable data table module for Nuxt 3 with advanced features like p
 - 🧩 &nbsp;Slot system for custom cell rendering
 - 📝 &nbsp;Pre-formatting system for data display
 - 📊 &nbsp;Reusable components (ProgressBar, TagsList)
+- 🌐 &nbsp;Internationalization (i18n) support
 - 📤 &nbsp;Data export capabilities
 - 🔄 &nbsp;Optimized rendering for large datasets
 
@@ -45,7 +46,11 @@ export default defineNuxtConfig({
     perPage: 10,
     paginationType: 'client',
     searchable: true,
-    theme: 'default'
+    theme: 'default',
+    i18n: {
+      enabled: true,
+      defaultLocale: 'en'
+    }
   }
 })
 ```
@@ -233,6 +238,56 @@ const handleTagClick = (tag) => {
 
 See the [Components Documentation](./docs/components.md) for more details.
 
+### Internationalization (i18n)
+
+The data table supports internationalization and is compatible with @nuxtjs/i18n:
+
+```vue
+<template>
+  <ArpixDataTable
+    :columns="columns"
+    :data-source="data"
+  />
+</template>
+```
+
+You can configure i18n in your nuxt.config.ts:
+
+```ts
+// nuxt.config.ts
+export default defineNuxtConfig({
+  modules: [
+    'nuxt-arpix-data-table',
+    '@nuxtjs/i18n'
+  ],
+  arpixDataTable: {
+    i18n: {
+      enabled: true,
+      defaultLocale: 'en',
+      messages: {
+        // Custom translations
+        en: {
+          // Override English translations
+          pagination: {
+            itemsPerPage: '{count} items per page'
+          }
+        },
+        es: {
+          // Spanish translations
+        }
+      }
+    }
+  },
+  i18n: {
+    // @nuxtjs/i18n configuration
+    locales: ['en', 'es', 'fr'],
+    defaultLocale: 'en'
+  }
+})
+```
+
+The module will use translations from @nuxtjs/i18n if available, otherwise it will use its own translations.
+
 ## Configuration Options
 
 ### Module Options
@@ -245,7 +300,12 @@ export default defineNuxtConfig({
     perPage: 10,            // Default items per page
     paginationType: 'client', // 'client' or 'server'
     searchable: true,       // Enable search by default
-    theme: 'default'        // Default theme
+    theme: 'default',       // Default theme
+    i18n: {
+      enabled: true,        // Enable i18n support
+      defaultLocale: 'en',  // Default locale
+      messages: {}          // Custom translations
+    }
   }
 })
 ```

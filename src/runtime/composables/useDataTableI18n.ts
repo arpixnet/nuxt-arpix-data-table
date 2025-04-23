@@ -1,0 +1,129 @@
+import { computed, ref } from 'vue'
+import { useNuxtApp } from '#app'
+import defaultTranslations from '../i18n/translations'
+
+/**
+ * Composable for handling i18n in the data table
+ */
+export function useDataTableI18n() {
+  const nuxtApp = useNuxtApp()
+  
+  // Get the module options
+  const config = nuxtApp.$arpixDataTable?.config || {}
+  
+  // Check if i18n is enabled in the module options
+  const i18nEnabled = computed(() => config.i18n?.enabled !== false)
+  
+  // Get the default locale from the module options or use 'en'
+  const defaultLocale = computed(() => config.i18n?.defaultLocale || 'en')
+  
+  // Get custom translations from the module options
+  const customTranslations = computed(() => config.i18n?.messages || {})
+  
+  // Check if @nuxtjs/i18n is available
+  const hasNuxtI18n = computed(() => {
+    return typeof nuxtApp.$i18n !== 'undefined'
+  })
+  
+  // Get the current locale from @nuxtjs/i18n or use the default locale
+  const currentLocale = computed(() => {
+    if (hasNuxtI18n.value) {
+      return nuxtApp.$i18n.locale.value || defaultLocale.value
+    }
+    return defaultLocale.value
+  })
+  
+  // Merge default translations with custom translations
+  const messages = computed(() => {
+    const result = { ...defaultTranslations }
+    
+    // Merge custom translations
+    Object.keys(customTranslations.value).forEach(locale => {
+      if (!result[locale]) {
+        result[locale] = { datatable: {} }
+      }
+      
+      result[locale].datatable = {
+        ...result[locale].datatable,
+        ...customTranslations.value[locale]
+      }
+    })
+    
+    return result
+  })
+  
+  /**
+   * Translate a key using @nuxtjs/i18n if available, otherwise use our own translations
+   * @param key The translation key
+   * @param params Optional parameters for the translation
+   * @returns The translated string
+   */
+  const t = (key: string, params?: Record<string, any>) => {
+    // If i18n is not enabled, return the key
+    if (!i18nEnabled.value) {
+      return key
+    }
+    
+    // If @nuxtjs/i18n is available, try to use it first
+    if (hasNuxtI18n.value) {
+      // Check if the key exists in the @nuxtjs/i18n translations
+      const i18nKey = `datatable.${key}`
+      const translated = nuxtApp.$i18n.t(i18nKey, params)
+      
+      // If the translation exists and is not the same as the key, return it
+      if (translated && translated !== i18nKey) {
+        return translated
+      }
+    }
+    
+    // Otherwise, use our own translations
+    const locale = currentLocale.value
+    const parts = key.split('.')
+    
+    // Get the translation from our messages
+    let translation = messages.value[locale]?.datatable
+    
+    for (const part of parts) {
+      if (!translation || typeof translation !== 'object') {
+        return key // Key not found
+      }
+      translation = translation[part]
+    }
+    
+    // If the translation is not found, try to use the default locale
+    if (!translation && locale !== defaultLocale.value) {
+      translation = messages.value[defaultLocale.value]?.datatable
+      
+      for (const part of parts) {
+        if (!translation || typeof translation !== 'object') {
+          return key // Key not found
+        }
+        translation = translation[part]
+      }
+    }
+    
+    // If the translation is still not found, return the key
+    if (!translation) {
+      return key
+    }
+    
+    // Replace parameters in the translation
+    let result = translation
+    
+    if (params) {
+      Object.keys(params).forEach(param => {
+        result = result.replace(`{${param}}`, params[param])
+      })
+    }
+    
+    return result
+  }
+  
+  return {
+    t,
+    currentLocale,
+    defaultLocale,
+    i18nEnabled,
+    hasNuxtI18n
+  }
+}

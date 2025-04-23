@@ -68,14 +68,14 @@
   <tr v-if="hasActiveFilters" class="arpix-data-table-filters-row">
     <th :colspan="selectable ? columns.length + 1 : columns.length" class="arpix-data-table-filters-cell">
       <div class="arpix-data-table-active-filters">
-        <span class="arpix-data-table-filters-label">Active filters:</span>
+        <span class="arpix-data-table-filters-label">{{ t('filters.title') }}</span>
         <div class="arpix-data-table-filter-tags">
           <div
             v-for="(filter, key) in filters"
             :key="key"
             class="arpix-data-table-filter-tag"
             @click="handleFilterUpdate(String(key), null)"
-            title="Click to remove filter"
+            :title="t('filters.remove')"
           >
             <span class="arpix-data-table-filter-tag-label">
               {{ getColumnLabel(String(key)) }}:
@@ -93,7 +93,7 @@
           class="arpix-data-table-clear-filters"
           @click="clearAllFilters"
         >
-          Clear all
+          {{ t('filters.clearAll') }}
         </button>
       </div>
     </th>
@@ -106,6 +106,7 @@ import type { TableColumn, SortConfig, FilterConfig, FilterSet } from '../types'
 import DataTableColumnFilter from './DataTableColumnFilter.vue'
 import { format, parse, isValid, parseISO } from 'date-fns'
 import { useRelationLabels } from '../composables/useRelationLabels'
+import { useDataTableI18n } from '../composables'
 
 // Define props
 const props = defineProps<{
@@ -183,6 +184,9 @@ const getColumnLabel = (key: string) => {
 // Get relation labels
 const { getRelationLabel } = useRelationLabels()
 
+// Use i18n composable
+const { t } = useDataTableI18n()
+
 const getFilterDisplayValue = (key: string, filter: FilterConfig | any) => {
   // Get column definition
   const column = props.columns.find(col => col.key === key)
@@ -227,15 +231,15 @@ const getFilterDisplayValue = (key: string, filter: FilterConfig | any) => {
 
 const getOperatorDisplay = (operator: string) => {
   const operatorMap: Record<string, string> = {
-    '=': 'equals',
-    '!=': 'not equals',
-    '>': 'greater than',
-    '>=': 'greater than or equals',
-    '<': 'less than',
-    '<=': 'less than or equals',
-    'contains': 'contains',
-    'startsWith': 'starts with',
-    'endsWith': 'ends with'
+    '=': t('filters.equals'),
+    '!=': t('filters.notEquals'),
+    '>': t('filters.greaterThan'),
+    '>=': t('filters.greaterThanOrEquals'),
+    '<': t('filters.lessThan'),
+    '<=': t('filters.lessThanOrEquals'),
+    'contains': t('filters.contains'),
+    'startsWith': t('filters.startsWith'),
+    'endsWith': t('filters.endsWith')
   }
 
   return operatorMap[operator] || operator
@@ -284,7 +288,7 @@ const formatFilterValue = (value: any, type?: string) => {
   }
 
   if (type === 'boolean') {
-    return value ? 'Yes' : 'No'
+    return value ? t('boolean.true') : t('boolean.false')
   }
 
   return String(value)
