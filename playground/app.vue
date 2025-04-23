@@ -56,6 +56,24 @@
         @selection-change="onSelectionChange"
         density="compact"
       >
+        <template #cell(actions)="{ row }">
+          <div class="action-buttons">
+            <button class="action-button edit" @click="handleEdit(row)" title="Edit">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+              </svg>
+            </button>
+            <button class="action-button delete" @click="handleDelete(row)" title="Delete">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+            </button>
+          </div>
+        </template>
         <template #footer>
           <div class="custom-footer">
             <div class="footer-summary">
@@ -69,6 +87,54 @@
           </div>
         </template>
       </ArpixDataTable>
+    </div>
+    <div class="example-section">
+      <h2 class="section-title">Custom Cell Rendering Example</h2>
+      <ArpixDataTable
+        :columns="customRenderColumns"
+        :data-source="customRenderData"
+      >
+        <!-- Custom cell rendering for the progress column using the ProgressBar component -->
+        <template #cell(progress)="{ value }">
+          <ProgressBar :value="value" :show-label="true" suffix="%" :color="getProgressColor(value)" />
+        </template>
+
+        <!-- Custom cell rendering for the tags column using the TagsList component -->
+        <template #cell(tags)="{ value }">
+          <TagsList
+            :tags="value"
+            :color-map="tagColors"
+            :clickable="true"
+            @tag-click="handleTagClick"
+          />
+        </template>
+      </ArpixDataTable>
+    </div>
+
+    <!-- New example section to demonstrate the components directly -->
+    <div class="example-section">
+      <h2 class="section-title">Reusable Components Example</h2>
+
+      <div class="component-demo">
+        <h3>ProgressBar Component</h3>
+        <div class="demo-row">
+          <ProgressBar :value="25" :show-label="true" suffix="%" />
+          <ProgressBar :value="50" :show-label="true" suffix="%" />
+          <ProgressBar :value="75" :show-label="true" suffix="%" />
+          <ProgressBar :value="90" :show-label="true" suffix="%" />
+          <ProgressBar :value="60" :show-label="true" suffix="%" color="#8b5cf6" />
+        </div>
+
+        <h3>TagsList Component</h3>
+        <div class="demo-row">
+          <TagsList
+            :tags="['Frontend', 'Backend', 'UI', 'API', 'Mobile', 'Database']"
+            :color-map="tagColors"
+            :clickable="true"
+            @tag-click="handleTagClick"
+          />
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -206,6 +272,14 @@ const advancedColumns: TableColumn[] = [
     format: 'boolean-format',
     align: 'center',
   },
+  {
+    key: 'actions',
+    label: 'Actions',
+    sortable: false,
+    filterable: false,
+    width: '150px',
+    align: 'center',
+  },
 ]
 
 const advancedData = [
@@ -259,6 +333,63 @@ const onSelectionChange = (selected: any[]) => {
 // Calculate total amount for the footer
 const calculateTotalAmount = (items: any[]): number => {
   return items.reduce((total, item) => total + (item.amount || 0), 0)
+}
+
+// Custom cell action handlers
+const handleEdit = (row: any) => {
+  console.log('Edit item:', row)
+  // In a real application, you might open a modal or navigate to an edit page
+  alert(`Editing item: ${row.name}`)
+}
+
+const handleDelete = (row: any) => {
+  console.log('Delete item:', row)
+  // In a real application, you might show a confirmation dialog
+  alert(`Deleting item: ${row.name}`)
+}
+
+// Custom rendering example
+const customRenderColumns: TableColumn[] = [
+  { key: 'id', label: 'ID', sortable: true, width: '80px' },
+  { key: 'name', label: 'Project', sortable: true },
+  { key: 'progress', label: 'Progress', sortable: true, type: 'number' },
+  { key: 'tags', label: 'Tags' },
+  { key: 'lastUpdate', label: 'Last Update', sortable: true, type: 'date', format: 'date-format' }
+]
+
+const customRenderData = [
+  { id: 1, name: 'Website Redesign', progress: 75, tags: ['UI', 'Design', 'Frontend', 'SQL'], lastUpdate: '2023-06-15' },
+  { id: 2, name: 'Mobile App Development', progress: 45, tags: ['React Native', 'Mobile'], lastUpdate: '2023-07-22' },
+  { id: 3, name: 'API Integration', progress: 90, tags: ['Backend', 'API'], lastUpdate: '2023-08-05' },
+  { id: 4, name: 'Database Migration', progress: 30, tags: ['Database', 'SQL'], lastUpdate: '2023-09-10' },
+  { id: 5, name: 'Security Audit', progress: 60, tags: ['Security', 'Testing'], lastUpdate: '2023-10-18' }
+]
+
+const getProgressColor = (value: number): string => {
+  if (value < 40) return 'var(--arpix-error-color, #ef4444)'; // Red for low progress
+  if (value < 70) return 'var(--arpix-warning-color, #f59e0b)'; // Amber for medium progress
+  return 'var(--arpix-success-color, #10b981)'; // Green for high progress
+};
+
+// Tag colors for the TagsList component
+const tagColors: Record<string, string> = {
+  UI: '#e0f2fe',
+  Design: '#dbeafe',
+  Frontend: '#ede9fe',
+  Backend: '#f3e8ff',
+  API: '#fae8ff',
+  Mobile: '#fce7f3',
+  Database: '#fef3c7',
+  SQL: '#ecfccb',
+  Security: '#ffedd5',
+  Testing: '#f3f4f6',
+  'React Native': '#fce7f3',
+}
+
+// Handle tag click event
+const handleTagClick = (tag: string) => {
+  console.log(`Tag clicked: ${tag}`)
+  alert(`Tag clicked: ${tag}`)
 }
 </script>
 
@@ -402,5 +533,62 @@ body {
 .footer-button.primary:hover {
   background-color: #2563eb;
   border-color: #2563eb;
+}
+
+/* Custom action buttons styles */
+.action-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-button:hover {
+  background-color: #f1f5f9;
+}
+
+.action-button.edit:hover {
+  color: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.action-button.delete:hover {
+  color: #ef4444;
+  border-color: #ef4444;
+}
+
+/* Demo section styles */
+.component-demo {
+  background-color: #f9fafb;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+}
+
+.component-demo h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+  color: #374151;
+}
+
+.demo-row {
+  margin-bottom: 2rem;
+}
+
+.demo-row:last-child {
+  margin-bottom: 0;
 }
 </style>

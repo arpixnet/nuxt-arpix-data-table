@@ -162,7 +162,12 @@
                 @select="handleSelect"
                 @row-click="handleRowClick"
                 @cell-click="handleCellClick"
-              />
+              >
+                <!-- Pass all cell slots to the DataTableBody component -->
+                <template v-for="(_, name) in $slots" :key="name" v-slot:[name]="slotData">
+                  <slot :name="name" v-bind="slotData"></slot>
+                </template>
+              </ArpixDataTableBody>
             </slot>
           </template>
         </tbody>

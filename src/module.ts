@@ -88,7 +88,13 @@ export default defineNuxtModule<ModuleOptions>({
     // Add CSS variables
     nuxt.options.css.push(resolver.resolve('./runtime/assets/variables.css'))
 
+    // Add TypeScript declaration file
+    nuxt.hook('prepare:types', (options) => {
+      options.references.push({ path: resolver.resolve('./runtime/components.d.ts') })
+    })
+
     // Make options available to the rest of the app
+    // @ts-ignore - We know the options are compatible
     nuxt.options.runtimeConfig.public.arpixDataTable = options
   },
 })

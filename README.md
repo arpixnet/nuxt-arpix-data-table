@@ -19,6 +19,7 @@ A highly configurable data table module for Nuxt 3 with advanced features like p
 - 📱 &nbsp;Responsive design for all screen sizes
 - 🧩 &nbsp;Slot system for custom cell rendering
 - 📝 &nbsp;Pre-formatting system for data display
+- 📊 &nbsp;Reusable components (ProgressBar, TagsList)
 - 📤 &nbsp;Data export capabilities
 - 🔄 &nbsp;Optimized rendering for large datasets
 
@@ -192,6 +193,45 @@ const columns = [
   </ArpixDataTable>
 </template>
 ```
+
+### Using Reusable Components
+
+The module includes reusable components that can be used in your tables or anywhere in your application:
+
+```vue
+<template>
+  <ArpixDataTable :columns="columns" :data-source="data">
+    <!-- Progress bar for percentage values -->
+    <template #cell(progress)="{ value }">
+      <ProgressBar :value="value" :show-label="true" suffix="%" />
+    </template>
+
+    <!-- Tags list for array values -->
+    <template #cell(tags)="{ value }">
+      <TagsList
+        :tags="value"
+        :color-map="tagColors"
+        :clickable="true"
+        @tag-click="handleTagClick"
+      />
+    </template>
+  </ArpixDataTable>
+</template>
+
+<script setup>
+const tagColors = {
+  'Frontend': '#ede9fe',
+  'Backend': '#f3e8ff',
+  'API': '#fae8ff'
+}
+
+const handleTagClick = (tag) => {
+  console.log(`Tag clicked: ${tag}`)
+}
+</script>
+```
+
+See the [Components Documentation](./docs/components.md) for more details.
 
 ## Configuration Options
 
