@@ -49,9 +49,11 @@
             <input
               type="text"
               v-model="searchQuery"
-              :placeholder="t('search.placeholder')"
+              :placeholder="searchPlaceholder"
               class="arpix-data-table-search-input"
               @keyup.enter="handleSearch"
+              data-test="search-input"
+              ref="searchInput"
             />
             <button
               v-if="searchQuery"
@@ -321,7 +323,8 @@ const emit = defineEmits<{
 // const slots = useSlots()
 
 // Use the i18n composable
-const { t } = useDataTableI18n()
+const { t, currentLocale } = useDataTableI18n()
+const searchPlaceholder = ref('')
 
 // Create the table configuration
 const tableConfig: TableConfig = {
@@ -465,9 +468,6 @@ watch(() => props.loading, (value: boolean) => {
 watch(() => props.error, (value: string) => {
   state.value.error = value
 })
-
-// We don't watch searchQuery changes anymore, search is triggered only on Enter key press
-// This improves performance by not searching while the user is typing
 
 // Watch for changes in dataSource
 watch(() => props.dataSource, (newValue) => {
@@ -657,6 +657,8 @@ onMounted(async () => {
   if (state?.value && props.initialFilters) {
     setFilters(props.initialFilters)
   }
+
+  searchPlaceholder.value = t('search.placeholder')
 })
 </script>
 

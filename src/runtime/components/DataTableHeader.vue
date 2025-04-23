@@ -239,7 +239,8 @@ const getOperatorDisplay = (operator: string) => {
     '<=': t('filters.lessThanOrEquals'),
     'contains': t('filters.contains'),
     'startsWith': t('filters.startsWith'),
-    'endsWith': t('filters.endsWith')
+    'endsWith': t('filters.endsWith'),
+    'in': t('filters.in')
   }
 
   return operatorMap[operator] || operator

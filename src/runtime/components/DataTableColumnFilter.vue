@@ -4,7 +4,7 @@
       class="arpix-data-table-filter-button"
       @click.stop="toggleFilterMenu($event)"
       :class="{ 'active': isActive }"
-      :title="isActive ? t('filters.active') : t('filters.column')"
+      :title="filterTitle"
       ref="filterButton"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -190,6 +190,7 @@ const filterValue = ref('')
 const dateFilterValue = ref('')
 const booleanValue = ref('')
 const selectedEnumValues = ref<string[]>([])
+const filterTitle = ref('')
 
 // Enum values detection
 const isEnumField = computed(() => {
@@ -352,6 +353,11 @@ const isActive = computed(() => {
   return props.activeFilters && props.column.key in props.activeFilters
 })
 
+// Log filter state for debugging
+if (props.debug) {
+  console.log('Filter state:', isActive.value ? 'active' : 'inactive')
+}
+
 // Watch for changes in active filters
 watch(() => props.activeFilters, (newFilters) => {
   if (newFilters && props.column.key in newFilters) {
@@ -452,14 +458,16 @@ onMounted(() => {
   document.addEventListener('close-filter-menus', ((event: CustomEvent) => {
     // Close this filter menu if it's not the one that should stay open
     if (event.detail.exceptId !== filterId) {
-      showFilterMenu.value = false;
+      showFilterMenu.value = false
     }
-  }) as EventListener);
-});
+  }) as EventListener)
+
+  filterTitle.value = (isActive.value) ? t('filters.active') : t('filters.column')
+})
 
 // Clean up event listeners on unmount
 onUnmounted(() => {
-  document.removeEventListener('close-filter-menus', (() => {}) as EventListener);
+  document.removeEventListener('close-filter-menus', (() => {}) as EventListener)
   document.removeEventListener('click', handleClickOutside);
   document.removeEventListener('keydown', handleEscapeKey);
   window.removeEventListener('resize', updateMenuPosition);
