@@ -1,10 +1,10 @@
 import { defineEventHandler, getQuery, getRouterParam, createError } from 'h3'
-import type { FilterSet, SortConfig, PaginationConfig } from '../../types'
+import type { FilterSet, SortConfig } from '../../types'
 import { parse, format, isValid, parseISO, isSameDay, startOfDay } from 'date-fns'
 
 // Set debug mode to false by default
-const config = useRuntimeConfig()
-const DEBUG_MODE = config.public.arpixDataTable?.debug || false
+// In a real implementation, you would use useRuntimeConfig() to get config
+const DEBUG_MODE = false
 
 /**
  * Main API handler for the data table engine
@@ -113,6 +113,24 @@ async function handleDataRequest(event: any, options: {
       return Object.entries(options.filters).every(([key, filter]) => {
         // Skip empty filters
         if (!filter) return true
+
+        // Special handling for relation fields (fields ending with _id)
+        if (key.endsWith('_id') && typeof filter === 'string') {
+          // For relation fields, we compare the ID directly
+          const itemValue = item[key as keyof typeof item]
+          // Convert both to strings for comparison to handle numeric vs string IDs
+          const result = String(itemValue) === String(filter)
+          if (DEBUG_MODE) {
+            console.log(`Relation filter for ${key}:`, {
+              itemValue,
+              filterValue: filter,
+              itemValueType: typeof itemValue,
+              filterValueType: typeof filter,
+              result
+            })
+          }
+          return result
+        }
 
         // Handle simple filters (key: value)
         if (typeof filter !== 'object') {

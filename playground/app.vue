@@ -113,6 +113,21 @@
 
     <!-- New example section to demonstrate the components directly -->
     <div class="example-section">
+      <h2 class="section-title">Hasura-like API Example with Relations</h2>
+      <ArpixDataTable
+        :columns="hasuraColumns"
+        data-source="/api/playground/data"
+        pagination="server"
+        :per-page="10"
+        :relations="hasuraRelations"
+      />
+      <div class="debug-info">
+        <p>This example uses a custom endpoint that simulates a Hasura GraphQL API response with relation data.</p>
+        <p>The endpoint is at <code>/api/playground/data</code> and returns employee data with department and project relations.</p>
+      </div>
+    </div>
+
+    <div class="example-section">
       <h2 class="section-title">Reusable Components Example</h2>
 
       <div class="component-demo">
@@ -391,6 +406,72 @@ const handleTagClick = (tag: string) => {
   console.log(`Tag clicked: ${tag}`)
   alert(`Tag clicked: ${tag}`)
 }
+
+// Hasura-like API example with relations
+const hasuraRelations = [
+  { name: 'department', target: 'departments', type: 'belongsTo' },
+  { name: 'project', target: 'projects', type: 'belongsTo' }
+]
+
+const hasuraColumns: TableColumn[] = [
+  { key: 'id', label: 'ID', sortable: true, width: '80px', filterable: true, type: 'number' },
+  { key: 'first_name', label: 'First Name', sortable: true, filterable: true },
+  { key: 'last_name', label: 'Last Name', sortable: true, filterable: true },
+  { key: 'email', label: 'Email', sortable: true, filterable: true },
+  { key: 'hire_date', label: 'Hire Date', sortable: true, type: 'date', filterable: true, format: 'date-format' },
+  { key: 'salary', label: 'Salary', sortable: true, type: 'number', filterable: true, format: 'currency-format', align: 'right' },
+  {
+    key: 'is_active',
+    label: 'Active',
+    sortable: true,
+    filterable: true,
+    type: 'boolean',
+    format: 'boolean-format',
+    align: 'center'
+  },
+  {
+    key: 'status',
+    label: 'Status',
+    sortable: true,
+    filterable: true,
+    enumValues: ['active', 'on_leave', 'terminated'],
+    type: 'custom',
+    format: 'status-format',
+    statusColors: {
+      active: { background: '#dcfce7', text: '#166534', border: '#166534' },
+      on_leave: { background: '#fef9c3', text: '#854d0e', border: '#854d0e' },
+      terminated: { background: '#fee2e2', text: '#991b1b', border: '#991b1b' }
+    }
+  },
+  {
+    key: 'department_id',
+    label: 'Department',
+    sortable: true,
+    filterable: true,
+    type: 'relation',
+    relation: {
+      table: 'department', // Cambiado a singular para coincidir con la respuesta del API
+      displayField: 'name',
+      foreignKey: 'department_id',
+      apiEndpoint: '/api/playground/relation-options',
+      applyImmediately: false // Cambiado a false para usar el botón Apply
+    }
+  },
+  {
+    key: 'project_id',
+    label: 'Project',
+    sortable: true,
+    filterable: true,
+    type: 'relation',
+    relation: {
+      table: 'project', // Changed to singular to match API response
+      displayField: 'name',
+      foreignKey: 'project_id',
+      apiEndpoint: '/api/playground/relation-options',
+      applyImmediately: false // Changed to false to use Apply button
+    }
+  }
+]
 </script>
 
 <style>

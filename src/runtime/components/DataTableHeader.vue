@@ -105,6 +105,7 @@ import { computed } from 'vue'
 import type { TableColumn, SortConfig, FilterConfig, FilterSet } from '../types'
 import DataTableColumnFilter from './DataTableColumnFilter.vue'
 import { format, parse, isValid, parseISO } from 'date-fns'
+import { useRelationLabels } from '../composables/useRelationLabels'
 
 // Define props
 const props = defineProps<{
@@ -179,11 +180,37 @@ const getColumnLabel = (key: string) => {
   return column ? column.label : key
 }
 
+// Get relation labels
+const { getRelationLabel } = useRelationLabels()
+
 const getFilterDisplayValue = (key: string, filter: FilterConfig | any) => {
   // Get column definition
   const column = props.columns.find(col => col.key === key)
 
   if (!column) return String(filter)
+
+  // Special handling for relation columns
+  if (column.type === 'relation' && column.relation) {
+    // For relation columns, try to find the display name from the relation options
+    let filterValue: string | number = '';
+
+    if (typeof filter !== 'object') {
+      filterValue = filter;
+    } else if (typeof filter === 'object' && filter !== null && 'value' in filter) {
+      filterValue = filter.value;
+    }
+
+    // Try to get the label from our store
+    const label = getRelationLabel(key, filterValue);
+
+    if (label) {
+      // If we have a label, use it
+      return label;
+    } else {
+      // Otherwise, fall back to showing the ID
+      return `ID: ${filterValue}`;
+    }
+  }
 
   // Handle simple filters
   if (typeof filter !== 'object') {

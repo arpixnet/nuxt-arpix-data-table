@@ -103,6 +103,17 @@
           </div>
         </div>
 
+        <!-- Relation filter -->
+        <div v-else-if="column.type === 'relation'" class="arpix-data-table-filter-group">
+          <DataTableRelationFilter
+            :column="column"
+            :active-filter="activeFilters[column.key]"
+            :debug="debug"
+            :api-endpoint="column.relation?.apiEndpoint"
+            @update:value="onRelationFilterChange"
+          />
+        </div>
+
         <!-- Enum/Status filter (auto-detected) -->
         <div v-else-if="column.enumValues || isEnumField" class="arpix-data-table-filter-group">
           <div v-if="enumValues.length <= 3" class="arpix-data-table-filter-checkboxes">
@@ -154,6 +165,7 @@
 import { ref, computed, watch, onMounted, onUnmounted, reactive } from 'vue'
 import type { TableColumn, FilterConfig } from '../types'
 import { format, parse, isValid, parseISO } from 'date-fns'
+import DataTableRelationFilter from './DataTableRelationFilter.vue'
 
 // Define props
 const props = defineProps<{
@@ -510,6 +522,33 @@ const applyFilter = () => {
     return;
   }
 
+  // For relation fields, use the filterValue directly
+  if (props.column.type === 'relation' && filterValue.value) {
+    // Create filter config for relation
+    const filter: FilterConfig = {
+      field: props.column.key,
+      operator: '=',
+      value: filterValue.value
+    }
+
+    if (props.debug) {
+      console.log('Applying relation filter:', filter)
+    }
+
+    // Emit filter update
+    emit('update:filter', props.column.key, filter)
+
+    // Close filter menu
+    showFilterMenu.value = false
+    return
+  }
+
+  // If relation field but no value, clear the filter
+  if (props.column.type === 'relation' && !filterValue.value) {
+    clearFilter()
+    return
+  }
+
   // For boolean fields, use the booleanValue
   if (props.column.type === 'boolean' && booleanValue.value !== '') {
     // Convert string value to boolean - VERY IMPORTANT: this must be a real boolean, not a string
@@ -632,6 +671,18 @@ const onSelectChange = () => {
     console.log('Select value changed:', filterValue.value)
   }
   // We don't apply the filter immediately, user needs to click Apply
+}
+
+// Handle changes in relation filter
+const onRelationFilterChange = (value: string) => {
+  if (props.debug) {
+    console.log('Relation filter value changed:', value)
+  }
+  filterValue.value = value
+
+  // We're changing the behavior to always use the Apply button
+  // The user will need to click Apply to apply the filter
+  // This is more consistent with other filter types
 }
 
 

@@ -734,13 +734,37 @@ export function useDatatable(config: TableConfig) {
 
     // Filter params
     Object.entries(filters).forEach(([key, value]) => {
+      // Get column definition to determine type
+      const column = config.columns?.find(col => col.key === key);
+      const type = column?.type;
+
+      // Special handling for relation filters
+      if (type === 'relation') {
+        // For relation filters, we just send the ID value directly
+        if (config.debug) {
+          console.log('Processing relation filter:', {
+            key,
+            value,
+            type,
+            relationConfig: column?.relation,
+            valueType: typeof value
+          });
+        }
+
+        // If value is an object with a value property, extract that
+        let filterValue = value;
+        if (typeof value === 'object' && value !== null && 'value' in value) {
+          filterValue = value.value;
+        }
+
+        // Ensure we're sending a string value
+        params.append(`filter[${key}]`, String(filterValue));
+        return; // Skip further processing for this filter
+      }
+
       if (typeof value === 'object') {
         // For object filters, convert values based on type
         const processedFilter = { ...value };
-
-        // Auto-detect type if not specified in columns
-        const column = config.columns?.find(col => col.key === key);
-        const type = column?.type;
 
         // Convert value based on detected type
         if (processedFilter.value !== undefined) {
@@ -780,13 +804,12 @@ export function useDatatable(config: TableConfig) {
         params.append(`filter[${key}]`, JSON.stringify(processedFilter))
       } else {
         // For simple filters, try to convert to appropriate type
-        const column = config.columns?.find(col => col.key === key);
         const isIdField = key.toLowerCase().includes('id');
 
         if (isIdField) {
           // For ID fields, preserve the original value
           params.append(`filter[${key}]`, String(value))
-        } else if (column?.type === 'number' || (!isNaN(Number(value)) && typeof value !== 'boolean')) {
+        } else if (type === 'number' || (!isNaN(Number(value)) && typeof value !== 'boolean')) {
           // Convert to number if it's a numeric string
           params.append(`filter[${key}]`, String(Number(value)))
         } else {
@@ -904,7 +927,11 @@ export function useDatatable(config: TableConfig) {
 
     // Example: fetch from API
     try {
-      const response = await fetch(`/api/arpix-data-table/relation?table=${table}&id=${id}`)
+      // For playground, use the playground endpoint
+      const isPlayground = window.location.pathname.includes('/playground')
+      const endpoint = isPlayground ? '/api/playground/relation' : '/api/arpix-data-table/relation'
+
+      const response = await fetch(`${endpoint}?table=${table}&id=${id}`)
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`)

@@ -67,6 +67,18 @@ export interface TableColumn {
      * Foreign key field in the current table
      */
     foreignKey: string;
+
+    /**
+     * Whether to apply the filter immediately when a value is selected
+     * @default false
+     */
+    applyImmediately?: boolean;
+
+    /**
+     * Custom API endpoint for fetching relation options
+     * If not provided, the default endpoint will be used
+     */
+    apiEndpoint?: string;
   };
 
   /**
