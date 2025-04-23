@@ -51,7 +51,7 @@
               v-model="searchQuery"
               placeholder="Search..."
               class="arpix-data-table-search-input"
-              @keyup.enter="handleSearch"
+              @input="handleSearch"
             />
             <button
               v-if="searchQuery"
@@ -65,16 +65,6 @@
               </svg>
             </button>
           </div>
-          <button
-            class="arpix-data-table-search-button"
-            @click="handleSearch"
-            title="Search"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="11" cy="11" r="8"/>
-              <line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
-          </button>
         </div>
       </div>
     </div>
@@ -553,10 +543,10 @@ const handleCellClick = (value: any, key: string, row: any) => {
   emit('cell-click', value, key, row)
 }
 
-// Handle search button click or enter key press
+// Handle search input changes
 const handleSearch = () => {
   if (props.debug) {
-    console.log('Search button clicked or enter pressed, query:', searchQuery.value)
+    console.log('Search input changed, query:', searchQuery.value)
   }
   setSearch(searchQuery.value)
   emit('search-change', searchQuery.value)
@@ -719,20 +709,23 @@ onMounted(async () => {
 .arpix-data-table-search {
   display: flex;
   justify-content: flex-end;
+  margin: 0;
 }
 
 .arpix-data-table-search-container {
   display: flex;
-  align-items: center;
+  align-items: stretch; /* Changed from center to stretch for vertical alignment */
   width: 100%;
   max-width: 300px;
+  margin: 0;
 }
 
 .arpix-data-table-search-input-wrapper {
   position: relative;
   flex: 1;
   display: flex;
-  align-items: center;
+  align-items: stretch; /* Changed from center to stretch for vertical alignment */
+  margin: 0;
 }
 
 .arpix-data-table-search-input {
@@ -740,11 +733,18 @@ onMounted(async () => {
   min-width: 200px;
   padding: 0.5rem 0.75rem;
   padding-right: 2rem;
-  border: 1px solid var(--arpix-border-color);
-  border-radius: 0.375rem 0 0 0.375rem;
+  border: 1px solid var(--arpix-border-color, #cccccc);
+  border-radius: 0.375rem;
   font-size: 0.875rem;
   outline: none;
   transition: border-color 0.2s ease;
+  height: 36px;
+  box-sizing: border-box;
+  line-height: normal;
+  vertical-align: middle;
+  margin: 0 !important;
+  margin-bottom: 0 !important;
+  background-color: var(--arpix-input-bg, #f9f9f9);
 }
 
 .arpix-data-table-search-input:focus {
@@ -775,28 +775,7 @@ onMounted(async () => {
   opacity: 1;
 }
 
-.arpix-data-table-search-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 36px;
-  width: 36px;
-  background-color: var(--arpix-primary-color);
-  color: white;
-  border: none;
-  border-radius: 0 0.375rem 0.375rem 0;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.arpix-data-table-search-button:hover {
-  background-color: var(--arpix-primary-color-dark, #2563eb);
-}
-
-.arpix-data-table-search-button:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4);
-}
+/* Search button removed */
 
 /* View toggle buttons */
 .arpix-data-table-mobile-toggle {
@@ -881,6 +860,7 @@ onMounted(async () => {
 
   .arpix-data-table-search-container {
     max-width: 100%;
+    margin: 0;
   }
 
   /* Improve touch targets for mobile */
@@ -888,12 +868,17 @@ onMounted(async () => {
     padding: 0.6rem 0.75rem;
     padding-right: 2.5rem;
     font-size: 1rem;
+    height: 42px;
+    box-sizing: border-box;
+    line-height: normal;
+    vertical-align: middle;
+    border: 1px solid var(--arpix-border-color, #cccccc);
+    background-color: var(--arpix-input-bg, #f9f9f9);
+    margin: 0 !important;
+    margin-bottom: 0 !important;
   }
 
-  .arpix-data-table-search-button {
-    height: 42px;
-    width: 42px;
-  }
+  /* Search button removed */
 
   /* Add some spacing around the table */
   .arpix-data-table {
@@ -909,7 +894,6 @@ onMounted(async () => {
     width: 100%;
     max-width: 100%;
   }
-
 
 }
 
@@ -1370,5 +1354,12 @@ onMounted(async () => {
 
 .arpix-data-table.theme-dark .boolean-false {
   color: #f87171;
+}
+
+/* Override any margin-bottom from filter inputs */
+.arpix-data-table input[type="text"].arpix-data-table-search-input,
+.arpix-data-table-search-input {
+  margin: 0 !important;
+  margin-bottom: 0 !important;
 }
 </style>
