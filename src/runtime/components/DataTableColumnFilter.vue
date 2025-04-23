@@ -703,7 +703,7 @@ const handleClickOutside = (event: MouseEvent) => {
 
 .arpix-data-table-filter-menu {
   width: 280px;
-  background-color: white;
+  background-color: var(--arpix-filter-menu-bg, #ffffff);
   border: 1px solid #ccc;
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -724,18 +724,6 @@ const handleClickOutside = (event: MouseEvent) => {
     max-height: 80vh;
     border-radius: 8px;
   }
-
-  /* Add overlay background */
-  .arpix-data-table-filter-menu::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
-    z-index: -1;
-  }
 }
 
 .arpix-data-table-filter-header {
@@ -745,6 +733,7 @@ const handleClickOutside = (event: MouseEvent) => {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid var(--arpix-border-color);
   font-weight: 500;
+  background-color: var(--arpix-filter-menu-bg, #ffffff);
 }
 
 .arpix-data-table-filter-close {
@@ -762,6 +751,7 @@ const handleClickOutside = (event: MouseEvent) => {
 
 .arpix-data-table-filter-content {
   padding: 1rem;
+  background-color: var(--arpix-filter-menu-bg, #ffffff);
 }
 
 .arpix-data-table-filter-group {
@@ -769,17 +759,26 @@ const handleClickOutside = (event: MouseEvent) => {
 }
 
 .arpix-data-table-filter-select,
-.arpix-data-table-filter-input {
+.arpix-data-table-filter-input,
+input[type="date"],
+input[type="text"],
+input[type="number"] {
   width: 100%;
   padding: 0.5rem;
-  border: 1px solid var(--arpix-border-color);
+  border: 1px solid var(--arpix-border-color, #cccccc);
   border-radius: 4px;
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
+  height: 38px; /* Consistent height for all form elements */
+  box-sizing: border-box;
+  background-color: var(--arpix-input-bg, #f9f9f9);
 }
 
 .arpix-data-table-filter-select:focus,
-.arpix-data-table-filter-input:focus {
+.arpix-data-table-filter-input:focus,
+input[type="date"]:focus,
+input[type="text"]:focus,
+input[type="number"]:focus {
   outline: none;
   border-color: var(--arpix-primary-color);
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
@@ -808,22 +807,32 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 
   .arpix-data-table-filter-select,
-  .arpix-data-table-filter-input {
-    padding: 0.6rem;
-    font-size: 1rem; /* Larger font for better touch targets */
+  .arpix-data-table-filter-input,
+  input[type="date"],
+  input[type="text"],
+  input[type="number"] {
+    padding: 0.5rem;
+    font-size: 0.875rem;
+    border: 1px solid var(--arpix-border-color, #cccccc);
   }
 
   .arpix-data-table-filter-apply,
   .arpix-data-table-filter-clear {
-    padding: 0.6rem 1rem;
-    font-size: 1rem;
-    min-width: 80px; /* Ensure buttons are large enough to tap */
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    min-width: 80px;
   }
 
   .arpix-data-table-filter-checkbox label,
   .arpix-data-table-filter-radio label {
-    font-size: 1rem;
+    font-size: 0.875rem;
     padding: 0.25rem 0;
+  }
+
+  .arpix-data-table-filter-checkbox input[type="checkbox"],
+  .arpix-data-table-filter-radio input[type="radio"] {
+    width: 24px;
+    height: 24px;
   }
 
   /* Increase spacing for better touch targets */
@@ -841,21 +850,24 @@ const handleClickOutside = (event: MouseEvent) => {
   font-size: 0.875rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-width: 80px;
+  text-align: center;
 }
 
 .arpix-data-table-filter-apply {
-  background-color: var(--arpix-primary-color);
+  background-color: var(--arpix-filter-apply-bg, #4CAF50); /* Verde */
   color: white;
+  font-weight: 500;
 }
 
 .arpix-data-table-filter-apply:hover:not(:disabled) {
-  background-color: var(--arpix-primary-color-dark, #2563eb);
+  background-color: var(--arpix-filter-apply-hover-bg, #45a049); /* Darker green */
 }
 
 .arpix-data-table-filter-clear {
-  background-color: transparent;
-  color: var(--arpix-secondary-color);
-  border: 1px solid var(--arpix-border-color);
+  background-color: #f5f5f5;
+  color: #666;
+  border: 1px solid #ddd;
 }
 
 .arpix-data-table-filter-clear:hover:not(:disabled) {
@@ -864,8 +876,14 @@ const handleClickOutside = (event: MouseEvent) => {
 
 .arpix-data-table-filter-apply:disabled,
 .arpix-data-table-filter-clear:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: not-allowed;
+}
+
+.arpix-data-table-filter-apply:disabled {
+  background-color: var(--arpix-filter-apply-bg, #4CAF50); /* Verde */
+  color: white;
+  opacity: 0.7;
 }
 
 /* Checkbox styles for enum filters */
@@ -882,7 +900,14 @@ const handleClickOutside = (event: MouseEvent) => {
 }
 
 .arpix-data-table-filter-checkbox input[type="checkbox"] {
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--arpix-primary-color);
   margin: 0;
+  border: 1px solid var(--arpix-border-color, #cccccc);
+  border-radius: 4px;
+  position: relative;
 }
 
 .arpix-data-table-filter-checkbox label {
@@ -904,7 +929,13 @@ const handleClickOutside = (event: MouseEvent) => {
 }
 
 .arpix-data-table-filter-radio input[type="radio"] {
+  cursor: pointer;
+  width: 20px;
+  height: 20px;
+  accent-color: var(--arpix-primary-color);
   margin: 0;
+  border: 1px solid var(--arpix-border-color, #cccccc);
+  position: relative;
 }
 
 .arpix-data-table-filter-radio label {
@@ -917,6 +948,23 @@ const handleClickOutside = (event: MouseEvent) => {
   margin-top: 0.5rem;
   font-size: 0.875rem;
   color: #666;
+}
+
+/* Ensure date inputs have consistent styling */
+input[type="date"] {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0.5rem;
+  border: 1px solid var(--arpix-border-color, #cccccc);
+  background-color: var(--arpix-input-bg, #f9f9f9);
+}
+
+/* Filter actions */
+.arpix-data-table-filter-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 /* Boolean filter actions */
@@ -936,7 +984,79 @@ const handleClickOutside = (event: MouseEvent) => {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+.theme-dark .arpix-data-table-filter-menu {
+  background-color: var(--arpix-dark-bg, #2d3748);
+  color: var(--arpix-dark-text, #e2e8f0);
+  border-color: var(--arpix-dark-border, #4a5568);
+}
+
+.theme-dark .arpix-data-table-filter-header {
+  border-color: var(--arpix-dark-border, #4a5568);
+  color: var(--arpix-dark-text, #e2e8f0);
+  background-color: var(--arpix-dark-header-bg, #1a202c);
+}
+
+.theme-dark .arpix-data-table-filter-clear {
+  background-color: var(--arpix-dark-button-bg, #4a5568);
+  color: var(--arpix-dark-text, #e2e8f0);
+  border-color: var(--arpix-dark-border, #718096);
+}
+
 .theme-dark .arpix-data-table-filter-clear:hover:not(:disabled) {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--arpix-dark-button-hover-bg, #2d3748);
+}
+
+.theme-dark .arpix-data-table-filter-select,
+.theme-dark .arpix-data-table-filter-input,
+.theme-dark input[type="date"],
+.theme-dark input[type="text"],
+.theme-dark input[type="number"] {
+  background-color: var(--arpix-dark-input-bg, #4a5568);
+  color: var(--arpix-dark-text, #e2e8f0);
+  border: 1px solid var(--arpix-dark-border, #718096);
+}
+
+.theme-dark .arpix-data-table-filter-checkbox label,
+.theme-dark .arpix-data-table-filter-radio label {
+  color: var(--arpix-dark-text, #e2e8f0);
+}
+
+.theme-dark .arpix-data-table-filter-checkbox input[type="checkbox"],
+.theme-dark .arpix-data-table-filter-radio input[type="radio"] {
+  border-color: var(--arpix-dark-border, #718096);
+  background-color: var(--arpix-dark-input-bg, #4a5568);
+  accent-color: var(--arpix-primary-color);
+}
+
+.theme-dark .arpix-data-table-filter-content {
+  background-color: var(--arpix-dark-bg, #2d3748);
+  color: var(--arpix-dark-text, #e2e8f0);
+}
+
+.theme-dark .arpix-data-table-filter-date-info {
+  color: var(--arpix-dark-secondary-text, #a0aec0);
+}
+
+.theme-dark .arpix-data-table-filter-close {
+  color: var(--arpix-dark-text, #e2e8f0);
+}
+
+.theme-dark .arpix-data-table-filter-close:hover {
+  color: var(--arpix-primary-color, #63b3ed);
+}
+
+.theme-dark .arpix-data-table-filter-apply {
+  background-color: var(--arpix-filter-apply-bg, #4CAF50); /* Verde */
+  color: white;
+}
+
+.theme-dark .arpix-data-table-filter-apply:hover:not(:disabled) {
+  background-color: var(--arpix-filter-apply-hover-bg, #45a049); /* Darker green */
+}
+
+.theme-dark .arpix-data-table-filter-apply:disabled,
+.theme-dark .arpix-data-table-filter-clear:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

@@ -85,6 +85,9 @@ export default defineNuxtModule<ModuleOptions>({
       handler: resolver.resolve('./runtime/server/api/table-engine'),
     })
 
+    // Add CSS variables
+    nuxt.options.css.push(resolver.resolve('./runtime/assets/variables.css'))
+
     // Make options available to the rest of the app
     nuxt.options.runtimeConfig.public.arpixDataTable = options
   },

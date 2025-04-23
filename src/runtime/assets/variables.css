@@ -1,0 +1,47 @@
+:root {
+  /* Base colors */
+  --arpix-primary-color: #3b82f6;
+  --arpix-secondary-color: #64748b;
+  --arpix-border-color: #e2e8f0;
+  --arpix-background-color: #ffffff;
+  --arpix-hover-color: #f8fafc;
+  --arpix-text-color: #1e293b;
+  --arpix-header-background: #f1f5f9;
+  --arpix-header-text-color: #334155;
+  
+  /* Filter menu colors */
+  --arpix-filter-menu-bg: #ffffff;
+  --arpix-filter-apply-bg: #4CAF50;
+  --arpix-filter-apply-hover-bg: #45a049;
+  
+  /* Status colors */
+  --arpix-loading-color: #94a3b8;
+  --arpix-error-color: #ef4444;
+  --arpix-success-color: #22c55e;
+  --arpix-warning-color: #f59e0b;
+  --arpix-info-color: #0ea5e9;
+}
+
+/* Dark theme */
+.theme-dark {
+  --arpix-primary-color: #3b82f6;
+  --arpix-secondary-color: #94a3b8;
+  --arpix-border-color: #334155;
+  --arpix-background-color: #1e293b;
+  --arpix-hover-color: #334155;
+  --arpix-text-color: #f1f5f9;
+  --arpix-header-background: #0f172a;
+  --arpix-header-text-color: #e2e8f0;
+  
+  /* Filter menu colors - keep white background in dark theme */
+  --arpix-filter-menu-bg: #ffffff;
+  --arpix-filter-apply-bg: #4CAF50;
+  --arpix-filter-apply-hover-bg: #45a049;
+  
+  /* Status colors */
+  --arpix-loading-color: #64748b;
+  --arpix-error-color: #f87171;
+  --arpix-success-color: #4ade80;
+  --arpix-warning-color: #fbbf24;
+  --arpix-info-color: #38bdf8;
+}
