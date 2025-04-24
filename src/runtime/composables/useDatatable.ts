@@ -9,6 +9,101 @@ import type {
 } from '../types'
 
 /**
+   * Interface for export options
+   */
+export interface ExportOptions {
+  /**
+   * File name for the exported file (without extension)
+   */
+  fileName?: string;
+
+  /**
+   * Columns to include in the export (defaults to all columns)
+   */
+  columns?: TableColumn[];
+
+  /**
+   * Items to export (defaults to current table items)
+   */
+  items?: Record<string, any>[];
+
+  /**
+   * Whether to apply current filters (default: true)
+   */
+  applyFilters?: boolean;
+
+  /**
+   * Whether to apply current search (default: true)
+   */
+  applySearch?: boolean;
+
+  /**
+   * CSV specific options
+   */
+  csv?: {
+    /**
+     * Delimiter character (default: ',')
+     */
+    delimiter?: string;
+
+    /**
+     * Whether to include headers (default: true)
+     */
+    includeHeaders?: boolean;
+  };
+
+  /**
+   * Excel specific options
+   */
+  excel?: {
+    /**
+     * Sheet name (default: 'Data')
+     */
+    sheetName?: string;
+
+    /**
+     * Whether to style headers (default: true)
+     */
+    styleHeaders?: boolean;
+
+    /**
+     * Whether to auto-size columns (default: true)
+     */
+    autoSize?: boolean;
+  };
+
+  /**
+   * PDF specific options
+   */
+  pdf?: {
+    /**
+     * Page orientation (default: 'portrait')
+     */
+    orientation?: 'portrait' | 'landscape';
+
+    /**
+     * Page unit (default: 'mm')
+     */
+    unit?: string;
+
+    /**
+     * Page format (default: 'a4')
+     */
+    format?: string | [number, number];
+
+    /**
+     * Document title (default: 'Data Export')
+     */
+    title?: string;
+
+    /**
+     * Whether to include date (default: true)
+     */
+    includeDate?: boolean;
+  };
+}
+
+/**
  * Core composable for managing data table state and operations
  */
 export function useDatatable(config: TableConfig) {
@@ -1034,101 +1129,6 @@ export function useDatatable(config: TableConfig) {
 
     // Return as is for other types
     return value !== undefined && value !== null ? value : ''
-  }
-
-  /**
-   * Interface for export options
-   */
-  interface ExportOptions {
-    /**
-     * File name for the exported file (without extension)
-     */
-    fileName?: string;
-
-    /**
-     * Columns to include in the export (defaults to all columns)
-     */
-    columns?: TableColumn[];
-
-    /**
-     * Items to export (defaults to current table items)
-     */
-    items?: Record<string, any>[];
-
-    /**
-     * Whether to apply current filters (default: true)
-     */
-    applyFilters?: boolean;
-
-    /**
-     * Whether to apply current search (default: true)
-     */
-    applySearch?: boolean;
-
-    /**
-     * CSV specific options
-     */
-    csv?: {
-      /**
-       * Delimiter character (default: ',')
-       */
-      delimiter?: string;
-
-      /**
-       * Whether to include headers (default: true)
-       */
-      includeHeaders?: boolean;
-    };
-
-    /**
-     * Excel specific options
-     */
-    excel?: {
-      /**
-       * Sheet name (default: 'Data')
-       */
-      sheetName?: string;
-
-      /**
-       * Whether to style headers (default: true)
-       */
-      styleHeaders?: boolean;
-
-      /**
-       * Whether to auto-size columns (default: true)
-       */
-      autoSize?: boolean;
-    };
-
-    /**
-     * PDF specific options
-     */
-    pdf?: {
-      /**
-       * Page orientation (default: 'portrait')
-       */
-      orientation?: 'portrait' | 'landscape';
-
-      /**
-       * Page unit (default: 'mm')
-       */
-      unit?: string;
-
-      /**
-       * Page format (default: 'a4')
-       */
-      format?: string | [number, number];
-
-      /**
-       * Document title (default: 'Data Export')
-       */
-      title?: string;
-
-      /**
-       * Whether to include date (default: true)
-       */
-      includeDate?: boolean;
-    };
   }
 
   /**
