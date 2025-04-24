@@ -247,8 +247,7 @@
                 table: 'department', // Cambiado a singular para coincidir con la respuesta del API
                 displayField: 'name',
                 foreignKey: 'department_id',
-                apiEndpoint: '/api/playground/relation-options',
-                applyImmediately: false // Cambiado a false para usar el botón Apply
+                apiEndpoint: '/api/playground/relation-options'
             }
         },
         {
@@ -261,8 +260,7 @@
                 table: 'project', // Changed to singular to match API response
                 displayField: 'name',
                 foreignKey: 'project_id',
-                apiEndpoint: '/api/playground/relation-options',
-                applyImmediately: false // Changed to false to use Apply button
+                apiEndpoint: '/api/playground/relation-options'
             }
         }
     ]

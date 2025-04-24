@@ -1,21 +1,21 @@
-# Componentes Reutilizables
+# Reusable Components
 
-Nuxt Arpix Data Table incluye varios componentes reutilizables que puedes usar en tus tablas o en cualquier parte de tu aplicación.
+Nuxt Arpix Data Table includes several reusable components that you can use in your tables or anywhere in your application.
 
 ## ProgressBar
 
-El componente `ProgressBar` proporciona una barra de progreso visual que puede ser utilizada para mostrar porcentajes o valores de progreso.
+The `ProgressBar` component provides a visual progress bar that can be used to display percentages or progress values.
 
-### Propiedades
+### Properties
 
-| Propiedad | Tipo | Descripción | Valor por defecto |
-|-----------|------|-------------|-------------------|
-| `value` | `number` | El valor de progreso (0-100) | - |
-| `color` | `string` | Color personalizado para la barra de progreso | Automático basado en el valor |
-| `showLabel` | `boolean` | Mostrar el valor como texto | `true` |
-| `suffix` | `string` | Sufijo para añadir al valor (ej. '%') | `'%'` |
+| Property | Type | Description | Default |
+|----------|------|-------------|---------|
+| `value` | `number` | The progress value (0-100) | - |
+| `color` | `string` | Custom color for the progress bar | Automatic based on value |
+| `showLabel` | `boolean` | Show the value as text | `true` |
+| `suffix` | `string` | Suffix to add to the value (e.g. '%') | `'%'` |
 
-### Uso Básico
+### Basic Usage
 
 ```vue
 <template>
@@ -23,7 +23,7 @@ El componente `ProgressBar` proporciona una barra de progreso visual que puede s
 </template>
 ```
 
-### Personalización
+### Customization
 
 ```vue
 <template>
@@ -36,7 +36,7 @@ El componente `ProgressBar` proporciona una barra de progreso visual que puede s
 </template>
 ```
 
-### Uso en Tablas
+### Usage in Tables
 
 ```vue
 <template>
@@ -50,24 +50,24 @@ El componente `ProgressBar` proporciona una barra de progreso visual que puede s
 
 ## TagsList
 
-El componente `TagsList` muestra una lista de etiquetas con estilos personalizables y soporte para interacción.
+The `TagsList` component displays a list of tags with customizable styles and support for interaction.
 
-### Propiedades
+### Properties
 
-| Propiedad | Tipo | Descripción | Valor por defecto |
-|-----------|------|-------------|-------------------|
-| `tags` | `string[] \| number[]` | Array de etiquetas a mostrar | - |
-| `colorMap` | `Record<string, string>` | Colores personalizados para etiquetas específicas | - |
-| `defaultColor` | `string` | Color de fondo predeterminado para etiquetas sin color específico | `'#f3f4f6'` |
-| `clickable` | `boolean` | Indica si las etiquetas son clickeables | `false` |
+| Property | Type | Description | Default |
+|----------|------|-------------|---------|
+| `tags` | `string[] \| number[]` | Array of tags to display | - |
+| `colorMap` | `Record<string, string>` | Custom colors for specific tags | - |
+| `defaultColor` | `string` | Default background color for tags without a specific color | `'#f3f4f6'` |
+| `clickable` | `boolean` | Indicates if the tags are clickable | `false` |
 
-### Eventos
+### Events
 
-| Evento | Parámetros | Descripción |
-|--------|------------|-------------|
-| `tag-click` | `(tag: string \| number)` | Emitido cuando se hace clic en una etiqueta (si `clickable` es `true`) |
+| Event | Parameters | Description |
+|-------|------------|-------------|
+| `tag-click` | `(tag: string \| number)` | Emitted when a tag is clicked (if `clickable` is `true`) |
 
-### Uso Básico
+### Basic Usage
 
 ```vue
 <template>
@@ -75,7 +75,7 @@ El componente `TagsList` muestra una lista de etiquetas con estilos personalizab
 </template>
 ```
 
-### Con Colores Personalizados
+### With Custom Colors
 
 ```vue
 <template>
@@ -90,7 +90,7 @@ El componente `TagsList` muestra una lista de etiquetas con estilos personalizab
 </template>
 ```
 
-### Etiquetas Clickeables
+### Clickable Tags
 
 ```vue
 <template>
@@ -108,7 +108,7 @@ const handleTagClick = (tag) => {
 </script>
 ```
 
-### Uso en Tablas
+### Usage in Tables
 
 ```vue
 <template>
@@ -139,11 +139,11 @@ const handleTagClick = (tag) => {
 </script>
 ```
 
-## Personalización de Estilos
+## Style Customization
 
-Ambos componentes utilizan variables CSS que puedes personalizar en tu aplicación:
+Both components use CSS variables that you can customize in your application:
 
-### Variables CSS para ProgressBar
+### CSS Variables for ProgressBar
 
 ```css
 :root {
@@ -157,7 +157,7 @@ Ambos componentes utilizan variables CSS que puedes personalizar en tu aplicaci�
 }
 ```
 
-### Variables CSS para TagsList
+### CSS Variables for TagsList
 
 ```css
 :root {
@@ -167,7 +167,7 @@ Ambos componentes utilizan variables CSS que puedes personalizar en tu aplicaci�
 }
 ```
 
-Puedes sobrescribir estas variables en tu archivo CSS global o configurarlas a través de las opciones del módulo:
+You can override these variables in your global CSS file or configure them through the module options:
 
 ```js
 // nuxt.config.ts
@@ -177,7 +177,7 @@ export default defineNuxtConfig({
     themeVars: {
       'progress-bg': '#f0f0f0',
       'tag-bg': '#e5e7eb',
-      // ...otras variables
+      // ...other variables
     }
   }
 })
