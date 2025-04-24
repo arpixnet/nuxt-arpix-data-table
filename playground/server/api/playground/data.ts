@@ -133,7 +133,6 @@ function generateHasuraLikeData(
   // Apply filters
   let filteredData = mockData
   if (Object.keys(filters).length > 0) {
-    console.log('Applying filters:', filters)
     filteredData = mockData.filter((item) => {
       return Object.entries(filters).every(([key, filter]) => {
         // Skip empty filters
@@ -145,14 +144,6 @@ function generateHasuraLikeData(
           const itemValue = item[key as keyof typeof item]
           // Convert both to strings for comparison to handle numeric vs string IDs
           const result = String(itemValue) === String(filter)
-          console.log(`Relation filter for ${key}:`, {
-            itemValue,
-            filterValue: filter,
-            itemValueType: typeof itemValue,
-            filterValueType: typeof filter,
-            result,
-            item: item.id
-          })
           return result
         }
 

@@ -27,11 +27,11 @@ El componente `ProgressBar` proporciona una barra de progreso visual que puede s
 
 ```vue
 <template>
-  <ProgressBar 
-    :value="75" 
-    color="#8b5cf6" 
-    :show-label="true" 
-    suffix="%" 
+  <ProgressBar
+    :value="75"
+    color="#8b5cf6"
+    :show-label="true"
+    suffix="%"
   />
 </template>
 ```
@@ -79,13 +79,13 @@ El componente `TagsList` muestra una lista de etiquetas con estilos personalizab
 
 ```vue
 <template>
-  <TagsList 
-    :tags="['Frontend', 'Backend', 'API']" 
+  <TagsList
+    :tags="['Frontend', 'Backend', 'API']"
     :color-map="{
       Frontend: '#ede9fe',
       Backend: '#f3e8ff',
       API: '#fae8ff'
-    }" 
+    }"
   />
 </template>
 ```
@@ -94,8 +94,8 @@ El componente `TagsList` muestra una lista de etiquetas con estilos personalizab
 
 ```vue
 <template>
-  <TagsList 
-    :tags="['Frontend', 'Backend', 'API']" 
+  <TagsList
+    :tags="['Frontend', 'Backend', 'API']"
     :clickable="true"
     @tag-click="handleTagClick"
   />
@@ -103,7 +103,7 @@ El componente `TagsList` muestra una lista de etiquetas con estilos personalizab
 
 <script setup>
 const handleTagClick = (tag) => {
-  console.log(`Tag clicked: ${tag}`)
+  // Handle tag click event
 }
 </script>
 ```
@@ -114,8 +114,8 @@ const handleTagClick = (tag) => {
 <template>
   <ArpixDataTable :columns="columns" :data-source="data">
     <template #cell(tags)="{ value }">
-      <TagsList 
-        :tags="value" 
+      <TagsList
+        :tags="value"
         :color-map="tagColors"
         :clickable="true"
         @tag-click="handleTagClick"
@@ -134,7 +134,7 @@ const tagColors = {
 }
 
 const handleTagClick = (tag) => {
-  console.log(`Tag clicked: ${tag}`)
+  // Handle tag click event
 }
 </script>
 ```

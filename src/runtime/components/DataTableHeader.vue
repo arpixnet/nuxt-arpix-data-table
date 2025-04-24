@@ -1,3 +1,224 @@
+<script lang="ts" setup>
+import { computed } from '#imports'
+import type { TableColumn, SortConfig, FilterConfig, FilterSet } from '../types'
+import DataTableColumnFilter from './DataTableColumnFilter.vue'
+import { format, parse, isValid, parseISO } from 'date-fns'
+import { useRelationLabels } from '../composables/useRelationLabels'
+import { useDataTableI18n } from '../composables'
+
+// Define props
+const props = defineProps<{
+  columns: TableColumn[]
+  sort: SortConfig | null
+  filters: FilterSet
+  selectable?: boolean
+  selected?: any[]
+  items?: any[]
+  debug?: boolean
+}>()
+
+// Define emits
+const emit = defineEmits<{
+  'sort': [column: TableColumn]
+  'select-all': [selected: boolean]
+  'update:filters': [filters: FilterSet]
+}>()
+
+// Computed properties
+const allSelected = computed(() => {
+  if (!props.items?.length || !props.selected?.length) return false
+  return props.items.length === props.selected.length
+})
+
+const someSelected = computed(() => {
+  return props.selected && props.selected.length > 0
+})
+
+const hasActiveFilters = computed(() => {
+  return Object.keys(props.filters).length > 0
+})
+
+// Methods
+const isSorted = (column: TableColumn) => {
+  const sorted = props.sort && props.sort.field === column.key
+  return sorted
+}
+
+const isSortedAsc = (column: TableColumn) => {
+  return isSorted(column) && props.sort?.direction === 'asc'
+}
+
+const isSortedDesc = (column: TableColumn) => {
+  return isSorted(column) && props.sort?.direction === 'desc'
+}
+
+const isFiltered = (column: TableColumn) => {
+  return props.filters && column.key in props.filters
+}
+
+const getColumnStyle = (column: TableColumn) => {
+  const style: Record<string, string> = {}
+
+  if (column.width) {
+    style.width = column.width
+    style.minWidth = column.width
+  }
+
+  if (column.align) {
+    style.textAlign = column.align
+  }
+
+  return style
+}
+
+const getColumnLabel = (key: string) => {
+  const column = props.columns.find((col: any) => col.key === key)
+  return column ? column.label : key
+}
+
+// Get relation labels
+const { getRelationLabel } = useRelationLabels()
+
+// Use i18n composable
+const { t } = useDataTableI18n()
+
+const getFilterDisplayValue = (key: string, filter: FilterConfig | any) => {
+  // Get column definition
+  const column = props.columns.find((col: any) => col.key === key)
+
+  if (!column) return String(filter)
+
+  // Special handling for relation columns
+  if (column.type === 'relation' && column.relation) {
+    // For relation columns, try to find the display name from the relation options
+    let filterValue: string | number = '';
+
+    if (typeof filter !== 'object') {
+      filterValue = filter;
+    } else if (typeof filter === 'object' && filter !== null && 'value' in filter) {
+      filterValue = filter.value;
+    }
+
+    // Try to get the label from our store
+    const label = getRelationLabel(key, filterValue);
+
+    if (label) {
+      // If we have a label, use it
+      return label;
+    } else {
+      // Otherwise, fall back to showing the ID
+      return `ID: ${filterValue}`;
+    }
+  }
+
+  // Handle simple filters
+  if (typeof filter !== 'object') {
+    return formatFilterValue(filter, column.type)
+  }
+
+  // Handle complex filters
+  const { operator, value } = filter
+  const operatorDisplay = getOperatorDisplay(operator)
+  const formattedValue = formatFilterValue(value, column.type)
+
+  return `${operatorDisplay} ${formattedValue}`
+}
+
+const getOperatorDisplay = (operator: string) => {
+  const operatorMap: Record<string, string> = {
+    '=': t('filters.equals'),
+    '!=': t('filters.notEquals'),
+    '>': t('filters.greaterThan'),
+    '>=': t('filters.greaterThanOrEquals'),
+    '<': t('filters.lessThan'),
+    '<=': t('filters.lessThanOrEquals'),
+    'contains': t('filters.contains'),
+    'startsWith': t('filters.startsWith'),
+    'endsWith': t('filters.endsWith'),
+    'in': t('filters.in')
+  }
+
+  return operatorMap[operator] || operator
+}
+
+const formatFilterValue = (value: any, type?: string) => {
+  if (value === null || value === undefined) return ''
+
+  if (type === 'date' && typeof value === 'string') {
+    try {
+      // Parse the date using date-fns
+      let date: Date | null = null;
+
+      if (value.includes('/')) {
+        // Try DD/MM/YYYY format
+        date = parse(value, 'dd/MM/yyyy', new Date());
+        if (!isValid(date)) {
+          // Try MM/DD/YYYY format as fallback
+          date = parse(value, 'MM/dd/yyyy', new Date());
+        }
+      } else {
+        // Try ISO format (YYYY-MM-DD)
+        date = parseISO(value);
+      }
+
+      // Check if date is valid
+      if (!date || !isValid(date)) {
+        console.warn('Invalid date for formatting in filter display:', value);
+        return value;
+      }
+
+      // Format as DD/MM/YYYY with leading zeros
+      const formatted = format(date, 'dd/MM/yyyy');
+      return formatted;
+    } catch (e) {
+      if (props.debug) {
+        console.error('Error formatting date for filter display:', e);
+      }
+      return value;
+    }
+  }
+
+  if (type === 'boolean') {
+    return value ? t('boolean.true') : t('boolean.false')
+  }
+
+  return String(value)
+}
+
+const handleSort = (column: TableColumn) => {
+  if (column.sortable) {
+    emit('sort', column)
+  }
+}
+
+const handleFilterUpdate = (key: string, filter: FilterConfig | null) => {
+  // Create a new filters object to maintain reactivity
+  const newFilters = { ...props.filters }
+
+  if (filter === null) {
+    // Remove filter
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+    delete newFilters[key]
+  } else {
+    // Add or update filter
+    newFilters[key] = filter
+  }
+
+  // Emit the updated filters
+  emit('update:filters', newFilters)
+}
+
+const clearAllFilters = () => {
+  // Emit empty filters object
+  emit('update:filters', {})
+}
+
+const toggleSelectAll = (event: Event) => {
+  const target = event.target as HTMLInputElement
+  emit('select-all', target.checked)
+}
+</script>
+
 <template>
   <!-- Main Header Row -->
   <tr class="arpix-data-table-header-row">
@@ -99,242 +320,6 @@
     </th>
   </tr>
 </template>
-
-<script lang="ts" setup>
-import { computed } from 'vue'
-import type { TableColumn, SortConfig, FilterConfig, FilterSet } from '../types'
-import DataTableColumnFilter from './DataTableColumnFilter.vue'
-import { format, parse, isValid, parseISO } from 'date-fns'
-import { useRelationLabels } from '../composables/useRelationLabels'
-import { useDataTableI18n } from '../composables'
-
-// Define props
-const props = defineProps<{
-  columns: TableColumn[]
-  sort: SortConfig | null
-  filters: FilterSet
-  selectable?: boolean
-  selected?: any[]
-  items?: any[]
-  debug?: boolean
-}>()
-
-// Define emits
-const emit = defineEmits<{
-  'sort': [column: TableColumn]
-  'select-all': [selected: boolean]
-  'update:filters': [filters: FilterSet]
-}>()
-
-// Computed properties
-const allSelected = computed(() => {
-  if (!props.items?.length || !props.selected?.length) return false
-  return props.items.length === props.selected.length
-})
-
-const someSelected = computed(() => {
-  return props.selected && props.selected.length > 0
-})
-
-const hasActiveFilters = computed(() => {
-  return Object.keys(props.filters).length > 0
-})
-
-// Methods
-const isSorted = (column: TableColumn) => {
-  const sorted = props.sort && props.sort.field === column.key
-  if (sorted && props.debug) {
-    console.log(`Column ${column.key} is sorted ${props.sort?.direction}`)
-  }
-  return sorted
-}
-
-const isSortedAsc = (column: TableColumn) => {
-  return isSorted(column) && props.sort?.direction === 'asc'
-}
-
-const isSortedDesc = (column: TableColumn) => {
-  return isSorted(column) && props.sort?.direction === 'desc'
-}
-
-const isFiltered = (column: TableColumn) => {
-  return props.filters && column.key in props.filters
-}
-
-const getColumnStyle = (column: TableColumn) => {
-  const style: Record<string, string> = {}
-
-  if (column.width) {
-    style.width = column.width
-    style.minWidth = column.width
-  }
-
-  if (column.align) {
-    style.textAlign = column.align
-  }
-
-  return style
-}
-
-const getColumnLabel = (key: string) => {
-  const column = props.columns.find(col => col.key === key)
-  return column ? column.label : key
-}
-
-// Get relation labels
-const { getRelationLabel } = useRelationLabels()
-
-// Use i18n composable
-const { t } = useDataTableI18n()
-
-const getFilterDisplayValue = (key: string, filter: FilterConfig | any) => {
-  // Get column definition
-  const column = props.columns.find(col => col.key === key)
-
-  if (!column) return String(filter)
-
-  // Special handling for relation columns
-  if (column.type === 'relation' && column.relation) {
-    // For relation columns, try to find the display name from the relation options
-    let filterValue: string | number = '';
-
-    if (typeof filter !== 'object') {
-      filterValue = filter;
-    } else if (typeof filter === 'object' && filter !== null && 'value' in filter) {
-      filterValue = filter.value;
-    }
-
-    // Try to get the label from our store
-    const label = getRelationLabel(key, filterValue);
-
-    if (label) {
-      // If we have a label, use it
-      return label;
-    } else {
-      // Otherwise, fall back to showing the ID
-      return `ID: ${filterValue}`;
-    }
-  }
-
-  // Handle simple filters
-  if (typeof filter !== 'object') {
-    return formatFilterValue(filter, column.type)
-  }
-
-  // Handle complex filters
-  const { operator, value } = filter
-  const operatorDisplay = getOperatorDisplay(operator)
-  const formattedValue = formatFilterValue(value, column.type)
-
-  return `${operatorDisplay} ${formattedValue}`
-}
-
-const getOperatorDisplay = (operator: string) => {
-  const operatorMap: Record<string, string> = {
-    '=': t('filters.equals'),
-    '!=': t('filters.notEquals'),
-    '>': t('filters.greaterThan'),
-    '>=': t('filters.greaterThanOrEquals'),
-    '<': t('filters.lessThan'),
-    '<=': t('filters.lessThanOrEquals'),
-    'contains': t('filters.contains'),
-    'startsWith': t('filters.startsWith'),
-    'endsWith': t('filters.endsWith'),
-    'in': t('filters.in')
-  }
-
-  return operatorMap[operator] || operator
-}
-
-const formatFilterValue = (value: any, type?: string) => {
-  if (value === null || value === undefined) return ''
-
-  if (type === 'date' && typeof value === 'string') {
-    try {
-      // Parse the date using date-fns
-      let date: Date | null = null;
-
-      if (value.includes('/')) {
-        // Try DD/MM/YYYY format
-        date = parse(value, 'dd/MM/yyyy', new Date());
-        if (!isValid(date)) {
-          // Try MM/DD/YYYY format as fallback
-          date = parse(value, 'MM/dd/yyyy', new Date());
-        }
-      } else {
-        // Try ISO format (YYYY-MM-DD)
-        date = parseISO(value);
-      }
-
-      // Check if date is valid
-      if (!date || !isValid(date)) {
-        if (props.debug) {
-          console.warn('Invalid date for formatting in filter display:', value);
-        }
-        return value;
-      }
-
-      // Format as DD/MM/YYYY with leading zeros
-      const formatted = format(date, 'dd/MM/yyyy');
-      if (props.debug) {
-        console.log('Formatted date for filter display:', { original: value, formatted });
-      }
-      return formatted;
-    } catch (e) {
-      if (props.debug) {
-        console.error('Error formatting date for filter display:', e);
-      }
-      return value;
-    }
-  }
-
-  if (type === 'boolean') {
-    return value ? t('boolean.true') : t('boolean.false')
-  }
-
-  return String(value)
-}
-
-const handleSort = (column: TableColumn) => {
-  if (column.sortable) {
-    if (props.debug) {
-      console.log('Header sort clicked:', column.key)
-    }
-    emit('sort', column)
-  }
-}
-
-const handleFilterUpdate = (key: string, filter: FilterConfig | null) => {
-  if (props.debug) {
-    console.log('Filter update:', key, filter)
-  }
-
-  // Create a new filters object to maintain reactivity
-  const newFilters = { ...props.filters }
-
-  if (filter === null) {
-    // Remove filter
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
-    delete newFilters[key]
-  } else {
-    // Add or update filter
-    newFilters[key] = filter
-  }
-
-  // Emit the updated filters
-  emit('update:filters', newFilters)
-}
-
-const clearAllFilters = () => {
-  // Emit empty filters object
-  emit('update:filters', {})
-}
-
-const toggleSelectAll = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  emit('select-all', target.checked)
-}
-</script>
 
 <style>
 .arpix-data-table-header-row {

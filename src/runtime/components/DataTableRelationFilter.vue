@@ -1,39 +1,5 @@
-<template>
-  <div class="arpix-data-table-filter-group">
-    <div class="arpix-data-table-relation-select-wrapper">
-      <select
-        v-model="filterValue"
-        class="arpix-data-table-filter-select"
-        @change="onSelectChange"
-      >
-        <option value="">{{ t('filters.select') }}</option>
-        <option v-for="option in relationOptions" :key="option.id" :value="option.id">
-          {{ option.name }}
-        </option>
-      </select>
-      <button
-        v-if="relationOptions.length === 0"
-        class="arpix-data-table-relation-reload"
-        @click="loadRelationOptions()"
-        :title="t('filters.reload')"
-      >
-        ↻
-      </button>
-    </div>
-
-    <!-- Debug info -->
-    <div v-if="showDebugInfo" class="relation-filter-debug">
-      <div>Options: {{ relationOptions.length }}</div>
-      <div>Column: {{ props.column.key }}</div>
-      <div>Table: {{ props.column.relation?.table }}</div>
-      <div>Endpoint: {{ apiEndpoint }}</div>
-      <button @click="loadRelationOptions()">Reload Options</button>
-    </div>
-  </div>
-</template>
-
 <script lang="ts" setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed } from '#imports'
 import type { TableColumn } from '../types'
 import { useRelationLabels } from '../composables/useRelationLabels'
 import { useDataTableI18n } from '../composables'
@@ -96,13 +62,15 @@ const loadRelationOptions = async () => {
     // Build the URL with the computed endpoint
     const url = `${apiEndpoint.value}?table=${table}`
 
-    // Always log this for debugging
-    console.log(`Fetching relation options from: ${url}`, {
-      column: props.column.key,
-      relation: props.column.relation,
-      isPlayground: isPlayground.value,
-      endpoint: apiEndpoint.value,
-    })
+    // Log this only in debug mode
+    if (props.debug) {
+      console.log(`Fetching relation options from: ${url}`, {
+        column: props.column.key,
+        relation: props.column.relation,
+        isPlayground: isPlayground.value,
+        endpoint: apiEndpoint.value,
+      })
+    }
 
     // Use a timeout to ensure the request doesn't hang indefinitely
     const controller = new AbortController()
@@ -124,7 +92,9 @@ const loadRelationOptions = async () => {
       }
 
       const data = await response.json()
-      console.log('Relation options API response:', data)
+      if (props.debug) {
+        console.log('Relation options API response:', data)
+      }
 
       if (Array.isArray(data)) {
         // Map data to relation options
@@ -134,11 +104,13 @@ const loadRelationOptions = async () => {
         }))
 
         // Store all relation labels for later use
-        relationOptions.value.forEach(option => {
+        relationOptions.value.forEach((option: any) => {
           setRelationLabel(props.column.key, option.id, option.name)
         })
 
-        console.log(`Loaded ${relationOptions.value.length} options for ${table} relation:`, relationOptions.value)
+        if (props.debug) {
+          console.log(`Loaded ${relationOptions.value.length} options for ${table} relation:`, relationOptions.value)
+        }
       } else {
         console.error('Invalid response format for relation options:', data)
       }
@@ -150,14 +122,6 @@ const loadRelationOptions = async () => {
     console.error('Error loading relation options:', error)
     // Fallback to empty options
     relationOptions.value = []
-
-    // If we're in debug mode, add a dummy option to show it's working
-    if (props.debug) {
-      relationOptions.value = [
-        { id: '1', name: 'Debug Option 1' },
-        { id: '2', name: 'Debug Option 2' },
-      ]
-    }
   }
 }
 
@@ -185,7 +149,7 @@ watch([() => props.column, apiEndpoint], () => {
 })
 
 // Watch for changes in activeFilter
-watch(() => props.activeFilter, (newFilter) => {
+watch(() => props.activeFilter, (newFilter: any) => {
   if (props.debug) {
     console.log('Active filter changed:', newFilter)
   }
@@ -207,20 +171,12 @@ const { setRelationLabel } = useRelationLabels()
 
 // Handle changes in select dropdown
 const onSelectChange = () => {
-  if (props.debug) {
-    console.log('Relation value changed:', filterValue.value)
-  }
-
   // Find the selected option to get its name
-  const selectedOption = relationOptions.value.find(option => String(option.id) === String(filterValue.value))
+  const selectedOption = relationOptions.value.find((option: any) => String(option.id) === String(filterValue.value))
 
   if (selectedOption) {
     // Store the relation label for later use
     setRelationLabel(props.column.key, selectedOption.id, selectedOption.name)
-
-    if (props.debug) {
-      console.log('Selected relation option:', selectedOption)
-    }
   }
 
   // Only emit the value change, but don't apply the filter yet
@@ -231,6 +187,40 @@ const onSelectChange = () => {
   // But we're changing this behavior to always use the Apply button
 }
 </script>
+
+<template>
+  <div class="arpix-data-table-filter-group">
+    <div class="arpix-data-table-relation-select-wrapper">
+      <select
+        v-model="filterValue"
+        class="arpix-data-table-filter-select"
+        @change="onSelectChange"
+      >
+        <option value="">{{ t('filters.select') }}</option>
+        <option v-for="option in relationOptions" :key="option.id" :value="option.id">
+          {{ option.name }}
+        </option>
+      </select>
+      <button
+        v-if="relationOptions.length === 0"
+        class="arpix-data-table-relation-reload"
+        @click="loadRelationOptions()"
+        :title="t('filters.reload')"
+      >
+        ↻
+      </button>
+    </div>
+
+    <!-- Debug info -->
+    <div v-if="showDebugInfo" class="relation-filter-debug">
+      <div>Options: {{ relationOptions.length }}</div>
+      <div>Column: {{ props.column.key }}</div>
+      <div>Table: {{ props.column.relation?.table }}</div>
+      <div>Endpoint: {{ apiEndpoint }}</div>
+      <button @click="loadRelationOptions()">Reload Options</button>
+    </div>
+  </div>
+</template>
 
 <style>
 /* Styles are inherited from the parent component */

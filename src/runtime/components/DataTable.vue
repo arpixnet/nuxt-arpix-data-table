@@ -1,3 +1,414 @@
+<script lang="ts" setup>
+import { computed, ref, watch, onMounted } from '#imports'
+import { useNuxtApp } from '#app'
+import { useDatatable, useDataTableI18n } from '../composables'
+import type {
+  TableConfig,
+  TableColumn,
+  SortConfig
+} from '../types'
+
+// Define props
+const props = withDefaults(defineProps<{
+  // Main configuration
+  columns: TableColumn[]
+  dataSource: any
+
+  // Pagination options
+  perPage?: number
+  pagination?: 'client' | 'server'
+
+  // Features
+  searchable?: boolean
+  selectable?: boolean
+
+  // UI options
+  tableClass?: string
+  theme?: string
+  density?: 'normal' | 'compact'
+  themeVars?: Record<string, string>
+  showHeader?: boolean
+  showFooter?: boolean
+  showPagination?: boolean
+  showSearch?: boolean
+  debug?: boolean
+
+  // State
+  loading?: boolean
+  error?: string
+  noDataText?: string
+
+  // Initial state
+  initialSort?: SortConfig
+  initialFilters?: Record<string, any>
+  initialPage?: number
+}>(), {
+  perPage: () => useNuxtApp().$arpixDataTable.config.perPage || 10,
+  pagination: 'client',
+  searchable: () => useNuxtApp().$arpixDataTable.config.searchable || true,
+  selectable: false,
+  tableClass: '',
+  theme: () => useNuxtApp().$arpixDataTable.config.theme || 'default',
+  density: 'normal',
+  themeVars: () => ({}),
+  showHeader: true,
+  showFooter: true,
+  showPagination: true,
+  showSearch: true,
+  debug: false,
+  loading: false,
+  error: '',
+  noDataText: '',
+  initialPage: 1,
+})
+
+// Define emits
+const emit = defineEmits<{
+  'update:loading': [value: boolean]
+  'update:error': [value: string]
+  'page-change': [page: number]
+  'sort-change': [sort: SortConfig]
+  'search-change': [query: string]
+  'filter-change': [filters: Record<string, any>]
+  'selection-change': [selected: any[]]
+  'row-click': [row: any, index: number]
+  'cell-click': [value: any, key: string, row: any]
+}>()
+
+// Get slots for later use if needed
+// const slots = useSlots()
+
+// Use the i18n composable
+const { t } = useDataTableI18n()
+const searchPlaceholder = ref('')
+
+// Create the table configuration
+const tableConfig: TableConfig = {
+  columns: props.columns,
+  dataSource: props.dataSource,
+  perPage: props.perPage,
+  searchable: props.searchable,
+  pagination: props.pagination,
+  selectable: props.selectable,
+  tableClass: props.tableClass,
+  theme: props.theme,
+  density: props.density,
+  themeVars: props.themeVars,
+  showHeader: props.showHeader,
+  showFooter: props.showFooter,
+  showPagination: props.showPagination,
+  showSearch: props.showSearch,
+  loading: props.loading,
+  error: props.error,
+  noDataText: props.noDataText || t('empty.noData'),
+  initialSort: props.initialSort,
+  filters: props.initialFilters || {},
+  debug: props.debug
+}
+
+// Log the table configuration if debug mode is enabled
+if (props.debug) {
+  console.log('Table config:', tableConfig)
+  console.log('Columns:', props.columns)
+}
+
+// Use the datatable composable
+const {
+  state,
+  loadData,
+  setPage,
+  setSort,
+  setSearch,
+  setFilters,
+  setSelected,
+  getDisplayItems
+} = useDatatable(tableConfig)
+
+// Reactive references to state
+const searchQuery = ref('')
+const sort = computed(() => state.value.sort)
+
+// Ensure pagination is always defined with default values
+const pagination = computed(() => {
+  if (!state.value?.pagination) {
+    return { page: 1, perPage: props.perPage || 10, total: 0 }
+  }
+  return state.value.pagination
+})
+
+const selected = computed(() => state.value.selected)
+
+// Card view state
+const mobileCardViewEnabled = ref(false) // Default to table view
+
+// Check if we're on mobile or tablet
+const isMobileOrTablet = computed(() => {
+  if (typeof window === 'undefined') return false
+  return window.innerWidth <= 1024
+})
+
+// Sync searchQuery with state.searchQuery
+watch(() => state.value.searchQuery, (value: string) => {
+  if (value !== searchQuery.value) {
+    searchQuery.value = value
+  }
+})
+const displayItems = computed(() => {
+  const items = getDisplayItems()
+  if (props.debug) {
+    console.log('Display items:', items)
+  }
+  return items
+})
+
+// Debug computed property
+const debug = computed(() => {
+  return {
+    dataSourceType: typeof props.dataSource,
+    isArray: Array.isArray(props.dataSource),
+    dataLength: Array.isArray(props.dataSource) ? props.dataSource.length : 0,
+    stateItems: state.value?.items?.length || 0,
+    displayItems: displayItems.value ? displayItems.value.length : 0,
+    firstItem: Array.isArray(props.dataSource) && props.dataSource.length > 0 ? props.dataSource[0] : null,
+    searchQuery: searchQuery.value,
+    stateSearchQuery: state.value?.searchQuery || '',
+    searchable: props.searchable,
+    sort: sort.value,
+    filters: state.value?.filters || {},
+    columns: visibleColumns.value.map((col: any) => ({ key: col.key, sortable: col.sortable })),
+    pagination: state.value?.pagination || { page: 1, perPage: props.perPage || 10, total: 0 },
+    loading: state.value?.loading || false,
+    error: state.value?.error || null,
+    dataSource: props.dataSource,
+    paginationType: props.pagination
+  }
+})
+
+// Computed properties
+const visibleColumns = computed(() =>
+  props.columns.filter((col: TableColumn) => col.visible !== false)
+)
+
+// Get column style
+const getColumnStyle = (column: TableColumn) => {
+  const style: Record<string, string> = {}
+
+  if (column.width) {
+    style.width = column.width
+    style.minWidth = column.width // Add minWidth to ensure the column respects the width
+  } else {
+    style.width = '180px' // Default width for columns without specified width
+    style.minWidth = '180px' // Default minimum width for columns without specified width
+  }
+
+  return style
+}
+
+const themeStyles = computed(() => {
+  const styles: Record<string, string> = {}
+
+  if (props.themeVars) {
+    Object.entries(props.themeVars).forEach(([key, value]) => {
+      styles[`--arpix-${key}`] = value as string
+    })
+  }
+
+  return styles
+})
+
+// Watch for changes in props
+watch(() => props.loading, (value: boolean) => {
+  state.value.loading = value
+})
+
+watch(() => props.error, (value: string) => {
+  state.value.error = value
+})
+
+// Watch for changes in dataSource
+watch(() => props.dataSource, (newValue: any) => {
+  if (props.debug) {
+    console.log('dataSource changed:', newValue)
+  }
+  if (Array.isArray(newValue)) {
+    state.value.items = [...newValue]
+    if (props.debug) {
+      console.log('Updated items from watcher:', state.value.items.length, 'items')
+    }
+  } else {
+    loadData()
+  }
+}, { deep: true })
+
+// Watch for changes in columns
+watch(() => props.columns, (newValue: any) => {
+  if (props.debug) {
+    console.log('columns changed:', newValue)
+  }
+  tableConfig.columns = newValue
+}, { deep: true })
+
+// Event handlers
+const handleSort = (column: TableColumn) => {
+  if (!column.sortable) return
+
+  if (props.debug) {
+    console.log('Handling sort for column:', column.key)
+  }
+
+  const newSort: SortConfig = {
+    field: column.key,
+    direction: sort.value?.field === column.key && sort.value?.direction === 'asc' ? 'desc' : 'asc'
+  }
+
+  if (props.debug) {
+    console.log('New sort:', newSort)
+  }
+
+  setSort(newSort)
+  emit('sort-change', newSort)
+}
+
+const handlePageChange = (page: number) => {
+  setPage(page)
+  emit('page-change', page)
+}
+
+const handleSelect = (items: any[]) => {
+  setSelected(items)
+  emit('selection-change', items)
+}
+
+const handleRowClick = (row: any, index: number) => {
+  emit('row-click', row, index)
+}
+
+const handleCellClick = (value: any, key: string, row: any) => {
+  emit('cell-click', value, key, row)
+}
+
+// Handle search when Enter key is pressed
+const handleSearch = () => {
+  if (props.debug) {
+    console.log('Search triggered by Enter key, query:', searchQuery.value)
+  }
+  setSearch(searchQuery.value)
+  emit('search-change', searchQuery.value)
+}
+
+// Clear search input and reset results
+const clearSearch = () => {
+  if (props.debug) {
+    console.log('Clearing search')
+  }
+  searchQuery.value = ''
+  setSearch('')
+  emit('search-change', '')
+}
+
+// Handle filter updates from the header
+const handleFilterUpdate = (filters: Record<string, any>) => {
+  if (props.debug) {
+    console.log('Filter update:', filters)
+  }
+
+  // Make sure state is initialized before updating filters
+  if (state?.value) {
+    setFilters(filters)
+    emit('filter-change', filters)
+
+    // Reset to first page when filters change
+    if (pagination.value?.page !== 1) {
+      setPage(1)
+    }
+  } else if (props.debug) {
+    console.warn('Cannot update filters: state is not initialized yet')
+  }
+}
+
+// Handle select all checkbox
+const handleSelectAll = (checked: boolean) => {
+  if (!state?.value) {
+    if (props.debug) {
+      console.warn('Cannot select items: state is not initialized yet')
+    }
+    return
+  }
+
+  if (checked) {
+    // Select all items
+    setSelected(displayItems.value || [])
+  } else {
+    // Deselect all items
+    setSelected([])
+  }
+
+  emit('selection-change', state.value.selected || [])
+}
+
+// Initialize
+onMounted(async () => {
+  // Set initial state
+  if (state?.value && props.initialSort) {
+    setSort(props.initialSort)
+  }
+
+  if (state?.value && props.initialPage && props.initialPage > 1) {
+    setPage(props.initialPage)
+  }
+
+  // Make sure state is initialized
+  if (!state?.value) {
+    if (props.debug) {
+      console.error('State is not initialized yet')
+    }
+    return
+  }
+
+  // Direct assignment for array data sources to ensure data is loaded
+  if (Array.isArray(props.dataSource)) {
+    state.value.items = [...props.dataSource]
+    if (props.debug) {
+      console.log('Directly assigned array data:', state.value.items.length, 'items')
+    }
+  } else if (typeof props.dataSource === 'string') {
+    // Load data from API
+    if (props.debug) {
+      console.log('Loading data from API:', props.dataSource)
+    }
+    try {
+      await loadData()
+      if (props.debug) {
+        console.log('Data loaded from API:', state.value.items.length, 'items')
+      }
+    } catch (error) {
+      if (props.debug) {
+        console.error('Error loading data from API:', error)
+      }
+      state.value.error = error instanceof Error ? error.message : 'Failed to load data'
+    }
+  } else {
+    // Load data from other sources
+    await loadData()
+    if (props.debug) {
+      console.log('Data loaded:', state.value.items)
+    }
+  }
+
+  // Initialize search if needed
+  if (state?.value && searchQuery.value) {
+    setSearch(searchQuery.value)
+  }
+
+  // Initialize filters if provided
+  if (state?.value && props.initialFilters) {
+    setFilters(props.initialFilters)
+  }
+
+  searchPlaceholder.value = t('search.placeholder')
+})
+</script>
+
 <template>
   <div
     class="arpix-data-table"
@@ -241,426 +652,6 @@
     </div>
   </div>
 </template>
-
-<script lang="ts" setup>
-import { computed, ref, watch, onMounted } from 'vue'
-import { useNuxtApp } from '#app'
-import { useDatatable, useDataTableI18n } from '../composables'
-import type {
-  TableConfig,
-  TableColumn,
-  SortConfig
-} from '../types'
-
-// Define props
-const props = withDefaults(defineProps<{
-  // Main configuration
-  columns: TableColumn[]
-  dataSource: any
-
-  // Pagination options
-  perPage?: number
-  pagination?: 'client' | 'server'
-
-  // Features
-  searchable?: boolean
-  selectable?: boolean
-
-  // UI options
-  tableClass?: string
-  theme?: string
-  density?: 'normal' | 'compact'
-  themeVars?: Record<string, string>
-  showHeader?: boolean
-  showFooter?: boolean
-  showPagination?: boolean
-  showSearch?: boolean
-  debug?: boolean
-
-  // State
-  loading?: boolean
-  error?: string
-  noDataText?: string
-
-  // Initial state
-  initialSort?: SortConfig
-  initialFilters?: Record<string, any>
-  initialPage?: number
-}>(), {
-  perPage: () => useNuxtApp().$arpixDataTable.config.perPage || 10,
-  pagination: 'client',
-  searchable: () => useNuxtApp().$arpixDataTable.config.searchable || true,
-  selectable: false,
-  tableClass: '',
-  theme: () => useNuxtApp().$arpixDataTable.config.theme || 'default',
-  density: 'normal',
-  themeVars: () => ({}),
-  showHeader: true,
-  showFooter: true,
-  showPagination: true,
-  showSearch: true,
-  debug: false,
-  loading: false,
-  error: '',
-  noDataText: '',
-  initialPage: 1,
-})
-
-// Define emits
-const emit = defineEmits<{
-  'update:loading': [value: boolean]
-  'update:error': [value: string]
-  'page-change': [page: number]
-  'sort-change': [sort: SortConfig]
-  'search-change': [query: string]
-  'filter-change': [filters: Record<string, any>]
-  'selection-change': [selected: any[]]
-  'row-click': [row: any, index: number]
-  'cell-click': [value: any, key: string, row: any]
-}>()
-
-// Get slots for later use if needed
-// const slots = useSlots()
-
-// Use the i18n composable
-const { t } = useDataTableI18n()
-const searchPlaceholder = ref('')
-
-// Create the table configuration
-const tableConfig: TableConfig = {
-  columns: props.columns,
-  dataSource: props.dataSource,
-  perPage: props.perPage,
-  searchable: props.searchable,
-  pagination: props.pagination,
-  selectable: props.selectable,
-  tableClass: props.tableClass,
-  theme: props.theme,
-  density: props.density,
-  themeVars: props.themeVars,
-  showHeader: props.showHeader,
-  showFooter: props.showFooter,
-  showPagination: props.showPagination,
-  showSearch: props.showSearch,
-  loading: props.loading,
-  error: props.error,
-  noDataText: props.noDataText || t('empty.noData'),
-  initialSort: props.initialSort,
-  filters: props.initialFilters || {},
-  debug: props.debug
-}
-
-// Log the table configuration if debug mode is enabled
-if (props.debug) {
-  console.log('Table config:', tableConfig)
-  console.log('Columns:', props.columns)
-}
-
-// Use the datatable composable
-const {
-  state,
-  loadData,
-  setPage,
-  setSort,
-  setSearch,
-  setFilters,
-  setSelected,
-  getDisplayItems
-} = useDatatable(tableConfig)
-
-// Reactive references to state
-const searchQuery = ref('')
-const sort = computed(() => state.value.sort)
-
-// Ensure pagination is always defined with default values
-const pagination = computed(() => {
-  if (!state.value?.pagination) {
-    return { page: 1, perPage: props.perPage || 10, total: 0 }
-  }
-  return state.value.pagination
-})
-
-const selected = computed(() => state.value.selected)
-
-// Card view state
-const mobileCardViewEnabled = ref(false) // Default to table view
-
-// Check if we're on mobile or tablet
-const isMobileOrTablet = computed(() => {
-  if (typeof window === 'undefined') return false
-  return window.innerWidth <= 1024
-})
-
-// Sync searchQuery with state.searchQuery
-watch(() => state.value.searchQuery, (value: string) => {
-  if (value !== searchQuery.value) {
-    searchQuery.value = value
-  }
-})
-const displayItems = computed(() => {
-  const items = getDisplayItems()
-  if (props.debug) {
-    console.log('Display items:', items)
-  }
-  return items
-})
-
-// Debug computed property
-const debug = computed(() => {
-  return {
-    dataSourceType: typeof props.dataSource,
-    isArray: Array.isArray(props.dataSource),
-    dataLength: Array.isArray(props.dataSource) ? props.dataSource.length : 0,
-    stateItems: state.value?.items?.length || 0,
-    displayItems: displayItems.value ? displayItems.value.length : 0,
-    firstItem: Array.isArray(props.dataSource) && props.dataSource.length > 0 ? props.dataSource[0] : null,
-    searchQuery: searchQuery.value,
-    stateSearchQuery: state.value?.searchQuery || '',
-    searchable: props.searchable,
-    sort: sort.value,
-    filters: state.value?.filters || {},
-    columns: visibleColumns.value.map(col => ({ key: col.key, sortable: col.sortable })),
-    pagination: state.value?.pagination || { page: 1, perPage: props.perPage || 10, total: 0 },
-    loading: state.value?.loading || false,
-    error: state.value?.error || null,
-    dataSource: props.dataSource,
-    paginationType: props.pagination
-  }
-})
-
-// Computed properties
-const visibleColumns = computed(() =>
-  props.columns.filter((col: TableColumn) => col.visible !== false)
-)
-
-// Get column style
-const getColumnStyle = (column: TableColumn) => {
-  const style: Record<string, string> = {}
-
-  if (column.width) {
-    style.width = column.width
-    style.minWidth = column.width // Add minWidth to ensure the column respects the width
-  } else {
-    style.width = '180px' // Default width for columns without specified width
-    style.minWidth = '180px' // Default minimum width for columns without specified width
-  }
-
-  return style
-}
-
-const themeStyles = computed(() => {
-  const styles: Record<string, string> = {}
-
-  if (props.themeVars) {
-    Object.entries(props.themeVars).forEach(([key, value]) => {
-      styles[`--arpix-${key}`] = value as string
-    })
-  }
-
-  return styles
-})
-
-// Watch for changes in props
-watch(() => props.loading, (value: boolean) => {
-  state.value.loading = value
-})
-
-watch(() => props.error, (value: string) => {
-  state.value.error = value
-})
-
-// Watch for changes in dataSource
-watch(() => props.dataSource, (newValue) => {
-  if (props.debug) {
-    console.log('dataSource changed:', newValue)
-  }
-  if (Array.isArray(newValue)) {
-    state.value.items = [...newValue]
-    if (props.debug) {
-      console.log('Updated items from watcher:', state.value.items.length, 'items')
-    }
-  } else {
-    loadData()
-  }
-}, { deep: true })
-
-// Watch for changes in columns
-watch(() => props.columns, (newValue) => {
-  if (props.debug) {
-    console.log('columns changed:', newValue)
-  }
-  tableConfig.columns = newValue
-}, { deep: true })
-
-// Event handlers
-const handleSort = (column: TableColumn) => {
-  if (!column.sortable) return
-
-  if (props.debug) {
-    console.log('Handling sort for column:', column.key)
-  }
-
-  const newSort: SortConfig = {
-    field: column.key,
-    direction: sort.value?.field === column.key && sort.value?.direction === 'asc' ? 'desc' : 'asc'
-  }
-
-  if (props.debug) {
-    console.log('New sort:', newSort)
-  }
-
-  setSort(newSort)
-  emit('sort-change', newSort)
-
-  // Force refresh of display items
-  if (props.debug) {
-    console.log('Display items after sort:', displayItems.value?.length || 0)
-  }
-}
-
-const handlePageChange = (page: number) => {
-  setPage(page)
-  emit('page-change', page)
-}
-
-const handleSelect = (items: any[]) => {
-  setSelected(items)
-  emit('selection-change', items)
-}
-
-const handleRowClick = (row: any, index: number) => {
-  emit('row-click', row, index)
-}
-
-const handleCellClick = (value: any, key: string, row: any) => {
-  emit('cell-click', value, key, row)
-}
-
-// Handle search when Enter key is pressed
-const handleSearch = () => {
-  if (props.debug) {
-    console.log('Search triggered by Enter key, query:', searchQuery.value)
-  }
-  setSearch(searchQuery.value)
-  emit('search-change', searchQuery.value)
-}
-
-// Clear search input and reset results
-const clearSearch = () => {
-  if (props.debug) {
-    console.log('Clearing search')
-  }
-  searchQuery.value = ''
-  setSearch('')
-  emit('search-change', '')
-}
-
-// Handle filter updates from the header
-const handleFilterUpdate = (filters: Record<string, any>) => {
-  if (props.debug) {
-    console.log('Filter update:', filters)
-  }
-
-  // Make sure state is initialized before updating filters
-  if (state?.value) {
-    setFilters(filters)
-    emit('filter-change', filters)
-
-    // Reset to first page when filters change
-    if (pagination.value?.page !== 1) {
-      setPage(1)
-    }
-  } else if (props.debug) {
-    console.warn('Cannot update filters: state is not initialized yet')
-  }
-}
-
-// Handle select all checkbox
-const handleSelectAll = (checked: boolean) => {
-  if (!state?.value) {
-    if (props.debug) {
-      console.warn('Cannot select items: state is not initialized yet')
-    }
-    return
-  }
-
-  if (checked) {
-    // Select all items
-    setSelected(displayItems.value || [])
-  } else {
-    // Deselect all items
-    setSelected([])
-  }
-
-  emit('selection-change', state.value.selected || [])
-}
-
-// Initialize
-onMounted(async () => {
-  if (props.debug) {
-    console.log('DataTable mounted, initializing with dataSource:', props.dataSource)
-  }
-
-  // Set initial state
-  if (state?.value && props.initialSort) {
-    setSort(props.initialSort)
-  }
-
-  if (state?.value && props.initialPage && props.initialPage > 1) {
-    setPage(props.initialPage)
-  }
-
-  // Make sure state is initialized
-  if (!state?.value) {
-    if (props.debug) {
-      console.error('State is not initialized yet')
-    }
-    return
-  }
-
-  // Direct assignment for array data sources to ensure data is loaded
-  if (Array.isArray(props.dataSource)) {
-    state.value.items = [...props.dataSource]
-    if (props.debug) {
-      console.log('Directly assigned array data:', state.value.items.length, 'items')
-    }
-  } else if (typeof props.dataSource === 'string') {
-    // Load data from API
-    if (props.debug) {
-      console.log('Loading data from API:', props.dataSource)
-    }
-    try {
-      await loadData()
-      if (props.debug) {
-        console.log('Data loaded from API:', state.value.items.length, 'items')
-      }
-    } catch (error) {
-      if (props.debug) {
-        console.error('Error loading data from API:', error)
-      }
-      state.value.error = error instanceof Error ? error.message : 'Failed to load data'
-    }
-  } else {
-    // Load data from other sources
-    await loadData()
-    if (props.debug) {
-      console.log('Data loaded:', state.value.items)
-    }
-  }
-
-  // Initialize search if needed
-  if (state?.value && searchQuery.value) {
-    setSearch(searchQuery.value)
-  }
-
-  // Initialize filters if provided
-  if (state?.value && props.initialFilters) {
-    setFilters(props.initialFilters)
-  }
-
-  searchPlaceholder.value = t('search.placeholder')
-})
-</script>
 
 <style>
 .arpix-data-table {

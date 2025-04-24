@@ -231,7 +231,7 @@ const tagColors = {
 }
 
 const handleTagClick = (tag) => {
-  console.log(`Tag clicked: ${tag}`)
+  // Handle tag click event
 }
 </script>
 ```

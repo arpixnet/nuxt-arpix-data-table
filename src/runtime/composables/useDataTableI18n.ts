@@ -69,11 +69,6 @@ export function useDataTableI18n() {
     const result: any = { ...defaultTranslations }
     const debug = nuxtApp.$arpixDataTable?.config?.debug
 
-    if (debug) {
-      console.log('Default translations:', defaultTranslations)
-      console.log('Custom translations:', customTranslations.value)
-    }
-
     // Merge custom translations
     Object.keys(customTranslations.value).forEach((locale) => {
       if (!result[locale]) {
@@ -104,33 +99,17 @@ export function useDataTableI18n() {
               current[part] = {}
             }
             current = current[part]
-
-            if (debug) {
-              console.log(`Created/navigated to part '${part}', current:`, current)
-            }
           }
 
           // Set the value at the leaf
           const lastPart = parts[parts.length - 1]
           current[lastPart] = customLocaleTranslations[key]
-
-          if (debug) {
-            console.log(`Set value for '${lastPart}' to:`, customLocaleTranslations[key])
-          }
         }
         else {
           // Handle regular keys
           result[locale].datatable[key] = customLocaleTranslations[key]
-
-          if (debug) {
-            console.log(`Set regular key '${key}' to:`, customLocaleTranslations[key])
-          }
         }
       })
-
-      if (debug) {
-        console.log(`Final translations for locale '${locale}':`, result[locale])
-      }
     })
 
     return result
@@ -145,7 +124,6 @@ export function useDataTableI18n() {
   const t = (key: string, params?: Record<string, unknown>) => {
     // If i18n is not enabled, return the key
     if (!i18nEnabled.value) {
-      console.log('i18n is disabled, returning key:', key)
       return key
     }
 
@@ -158,12 +136,6 @@ export function useDataTableI18n() {
       const i18nKey = `datatable.${key}`
       const translated = nuxtApp.$i18n.t(i18nKey, params)
 
-      if (debug) {
-        console.log('Using @nuxtjs/i18n for key:', key)
-        console.log('i18nKey:', i18nKey)
-        console.log('translated:', translated)
-      }
-
       // If the translation exists and is not the same as the key, return it
       if (translated && translated !== i18nKey) {
         return translated
@@ -174,20 +146,8 @@ export function useDataTableI18n() {
     const locale = currentLocale.value
     const parts = key.split('.')
 
-    if (debug) {
-      console.log('Using own translations for key:', key)
-      console.log('Current locale:', locale)
-      console.log('Parts:', parts)
-      console.log('Available messages:', Object.keys(messages.value))
-      console.log('Available translations for locale:', messages.value[locale])
-    }
-
     // Get the translation from our messages
     let translation = messages.value[locale]?.datatable
-
-    if (debug) {
-      console.log('Initial translation object:', translation)
-    }
 
     for (const part of parts) {
       if (!translation || typeof translation !== 'object') {
@@ -197,10 +157,6 @@ export function useDataTableI18n() {
         return key // Key not found
       }
       translation = translation[part]
-
-      if (debug) {
-        console.log(`After processing part '${part}', translation:`, translation)
-      }
     }
 
     // If the translation is not found, try to use the default locale
@@ -211,22 +167,11 @@ export function useDataTableI18n() {
 
       translation = messages.value[defaultLocale.value]?.datatable
 
-      if (debug) {
-        console.log('Default locale translation object:', translation)
-      }
-
       for (const part of parts) {
         if (!translation || typeof translation !== 'object') {
-          if (debug) {
-            console.log(`Translation not found in default locale for part '${part}', returning key:`, key)
-          }
           return key // Key not found
         }
         translation = translation[part]
-
-        if (debug) {
-          console.log(`After processing part '${part}' in default locale, translation:`, translation)
-        }
       }
     }
 

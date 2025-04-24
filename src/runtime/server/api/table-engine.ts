@@ -2,10 +2,6 @@ import { defineEventHandler, getQuery, getRouterParam, createError } from 'h3'
 import type { FilterSet, SortConfig } from '../../types'
 import { parse, format, isValid, parseISO, isSameDay, startOfDay } from 'date-fns'
 
-// Set debug mode to false by default
-// In a real implementation, you would use useRuntimeConfig() to get config
-const DEBUG_MODE = false
-
 /**
  * Main API handler for the data table engine
  */
@@ -70,9 +66,7 @@ export default defineEventHandler(async (event) => {
         })
     }
   } catch (error: any) {
-    if (DEBUG_MODE) {
-      console.error('Table engine error:', error)
-    }
+    console.error('Table engine error:', error)
 
     throw createError({
       statusCode: error.statusCode || 500,
@@ -120,15 +114,6 @@ async function handleDataRequest(event: any, options: {
           const itemValue = item[key as keyof typeof item]
           // Convert both to strings for comparison to handle numeric vs string IDs
           const result = String(itemValue) === String(filter)
-          if (DEBUG_MODE) {
-            console.log(`Relation filter for ${key}:`, {
-              itemValue,
-              filterValue: filter,
-              itemValueType: typeof itemValue,
-              filterValueType: typeof filter,
-              result
-            })
-          }
           return result
         }
 
@@ -166,55 +151,15 @@ async function handleDataRequest(event: any, options: {
             itemBoolValue = false;
           }
 
-          if (DEBUG_MODE) {
-            console.log('Server comparing boolean values:', {
-              itemValue,
-              itemBoolValue,
-              filterValue: value,
-              boolValue,
-              operator,
-              result: itemBoolValue === boolValue,
-              strictEqual: Object.is(itemBoolValue, boolValue),
-              boolValueType: typeof boolValue,
-              itemBoolValueType: typeof itemBoolValue,
-              boolValueIsTrue: boolValue === true,
-              boolValueIsFalse: boolValue === false,
-              itemBoolValueIsTrue: itemBoolValue === true,
-              itemBoolValueIsFalse: itemBoolValue === false
-            });
-          }
-
           // For boolean values, we need to do an explicit comparison
           if (operator === '=') {
             // Use strict equality for boolean comparison
-            const result = itemBoolValue === boolValue;
-            if (DEBUG_MODE) {
-              console.log('Boolean equality check:', {
-                itemBoolValue,
-                boolValue,
-                result,
-                itemValueType: typeof itemValue,
-                filterValueType: typeof value,
-                itemBoolValueType: typeof itemBoolValue,
-                boolValueType: typeof boolValue,
-                boolValueIsTrue: boolValue === true,
-                boolValueIsFalse: boolValue === false
-              });
-            }
+            const result = itemBoolValue === boolValue
             return result;
           } else if (operator === '!=') {
             // Use strict inequality for boolean comparison
-            const result = itemBoolValue !== boolValue;
-            if (DEBUG_MODE) {
-              console.log('Boolean inequality check:', {
-                itemBoolValue,
-                boolValue,
-                result,
-                itemValueType: typeof itemValue,
-                boolValueType: typeof boolValue
-              });
-            }
-            return result;
+            const result = itemBoolValue !== boolValue
+            return result
           }
 
           // If we get here, return false to continue with other comparisons
@@ -262,25 +207,11 @@ async function handleDataRequest(event: any, options: {
               // Check if both dates are valid
               if (isValid(itemDate) && isValid(filterDate)) {
                 // Normalize dates to start of day to ignore time components
-                const itemDateNormalized = startOfDay(itemDate);
-                const filterDateNormalized = startOfDay(filterDate);
+                const itemDateNormalized = startOfDay(itemDate)
+                const filterDateNormalized = startOfDay(filterDate)
 
                 // Check if dates are the same day (ignoring time)
-                const equal = isSameDay(itemDateNormalized, filterDateNormalized);
-
-                if (DEBUG_MODE) {
-                  console.log('Server comparing dates with date-fns:', {
-                    original: { itemValue, filterValue: value },
-                    parsed: { itemDate, filterDate },
-                    normalized: { itemDateNormalized, filterDateNormalized },
-                    formatted: {
-                      itemFormatted: format(itemDateNormalized, 'dd/MM/yyyy'),
-                      filterFormatted: format(filterDateNormalized, 'dd/MM/yyyy')
-                    },
-                    equal,
-                    operator
-                  });
-                }
+                const equal = isSameDay(itemDateNormalized, filterDateNormalized)
 
                 // Handle equality and inequality operators
                 if (operator === '=') {
@@ -297,10 +228,8 @@ async function handleDataRequest(event: any, options: {
                   return itemDateNormalized <= filterDateNormalized;
                 }
               }
-            } catch (e) {
-              if (DEBUG_MODE) {
-                console.error('Error comparing dates:', e);
-              }
+            } catch (error) {
+              console.error('Error comparing dates:', error);
             }
           }
         }

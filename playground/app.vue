@@ -348,7 +348,7 @@ const advancedData = [
 
 // Event handlers
 const onSelectionChange = (selected: any[]) => {
-  console.log('Selected items:', selected)
+  // No console.log for demo events
 }
 
 // Calculate total amount for the footer
@@ -358,13 +358,11 @@ const calculateTotalAmount = (items: any[]): number => {
 
 // Custom cell action handlers
 const handleEdit = (row: any) => {
-  console.log('Edit item:', row)
   // In a real application, you might open a modal or navigate to an edit page
   alert(`Editing item: ${row.name}`)
 }
 
 const handleDelete = (row: any) => {
-  console.log('Delete item:', row)
   // In a real application, you might show a confirmation dialog
   alert(`Deleting item: ${row.name}`)
 }
@@ -409,7 +407,6 @@ const tagColors: Record<string, string> = {
 
 // Handle tag click event
 const handleTagClick = (tag: string) => {
-  console.log(`Tag clicked: ${tag}`)
   alert(`Tag clicked: ${tag}`)
 }
 

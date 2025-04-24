@@ -1,4 +1,4 @@
-import { ref, reactive, watch, onMounted } from 'vue'
+import { ref, reactive, watch, onMounted } from '#imports'
 import { parse, format, isValid, parseISO, isSameDay, startOfDay } from 'date-fns'
 import type {
   TableConfig,
@@ -42,9 +42,6 @@ export function useDatatable(config: TableConfig) {
 
     try {
       let data: any[] = []
-      if (config.debug) {
-        console.log('Loading data from source:', config.dataSource)
-      }
 
       // Direct assignment for array data sources to ensure data is loaded
       if (Array.isArray(config.dataSource)) {
@@ -55,9 +52,6 @@ export function useDatatable(config: TableConfig) {
       if (Array.isArray(config.dataSource)) {
         // Array data source
         data = [...config.dataSource]
-        if (config.debug) {
-          console.log('Array data source, items:', data.length)
-        }
 
         // Apply client-side pagination, sorting, filtering
         if (config.pagination === 'client') {
@@ -134,9 +128,7 @@ export function useDatatable(config: TableConfig) {
       }
     } catch (error: any) {
       state.value.error = error.message || 'Failed to load data'
-      if (config.debug) {
-        console.error('Error loading data:', error)
-      }
+      console.error('Error loading data:', error)
     } finally {
       state.value.loading = false
     }
@@ -163,15 +155,7 @@ export function useDatatable(config: TableConfig) {
     if (Object.keys(state.value.filters).length > 0) {
       if (config.debug) {
         console.log('Applying filters in processClientData:', state.value.filters)
-
-        // Debug each filter
-        Object.entries(state.value.filters).forEach(([key, filter]) => {
-          if (typeof filter === 'object' && filter.value === false) {
-            console.log(`Found boolean false filter for ${key}:`, filter);
-          }
-        });
       }
-
       processed = applyFilters(processed, state.value.filters)
       if (config.debug) {
         console.log('After filters:', processed.length, 'items')
@@ -211,9 +195,7 @@ export function useDatatable(config: TableConfig) {
 
     // Check if config.columns is defined
     if (!config.columns || !Array.isArray(config.columns)) {
-      if (config.debug) {
-        console.error('Error: config.columns is undefined or not an array', config)
-      }
+      console.error('Error: config.columns is undefined or not an array', config)
       return data
     }
 
@@ -268,15 +250,9 @@ export function useDatatable(config: TableConfig) {
 
         // Skip if the value appears to be a non-string type
         if (typeof value === 'number' || typeof value === 'boolean') {
-          if (config.debug) {
-            console.log(`Skipping search in column ${column.key}: value is ${typeof value}`, value);
-          }
           return false;
         }
         if (value instanceof Date) {
-          if (config.debug) {
-            console.log(`Skipping search in column ${column.key}: value is Date`, value);
-          }
           return false;
         }
 
@@ -342,7 +318,6 @@ export function useDatatable(config: TableConfig) {
       return Object.entries(filters).every(([key, filter]) => {
         // Skip empty filters, but be careful with boolean false values
         if (!filter) {
-          if (config.debug) console.log(`Skipping null/undefined filter for ${key}:`, filter);
           return true;
         }
 
@@ -352,7 +327,6 @@ export function useDatatable(config: TableConfig) {
           const isEmpty = filter.value === undefined || filter.value === null || filter.value === '';
 
           if (isEmpty && !isBooleanFilter) {
-            if (config.debug) console.log(`Skipping empty filter for ${key}:`, filter);
             return true;
           }
         }
@@ -363,7 +337,6 @@ export function useDatatable(config: TableConfig) {
         // Handle simple filters (key: value)
         if (typeof filter !== 'object') {
           const result = compareValues(item[key], filter, '=', column?.type);
-          if (config.debug) console.log(`Simple filter for ${key}:`, { itemValue: item[key], filterValue: filter, result });
           return result;
         }
 
@@ -549,9 +522,7 @@ export function useDatatable(config: TableConfig) {
         itemValue = itemDateNormalized;
         filterValue = filterDateNormalized;
       } catch (e) {
-        if (config.debug) {
-          console.error('Error converting date values:', e)
-        }
+        console.error('Error converting date values:', e)
         return false
       }
     } else if (type === 'boolean') {
@@ -591,37 +562,15 @@ export function useDatatable(config: TableConfig) {
         filterBoolValue = false;
       }
 
-      if (config.debug) {
-        console.log('Client comparing boolean values:', {
-          itemValue,
-          itemBoolValue,
-          filterValue,
-          filterBoolValue,
-          operator,
-          result: itemBoolValue === filterBoolValue,
-          strictEqual: Object.is(itemBoolValue, filterBoolValue),
-          itemValueType: typeof itemValue,
-          filterValueType: typeof filterValue,
-          itemBoolValueType: typeof itemBoolValue,
-          filterBoolValueType: typeof filterBoolValue
-        });
-      }
-
       // For boolean values, we need to do an explicit comparison
       // to handle both true and false values correctly
       if (operator === '=') {
         // Use strict equality for boolean comparison
         const result = itemBoolValue === filterBoolValue;
-        if (config.debug) {
-          console.log('Boolean equality result:', { itemBoolValue, filterBoolValue, result });
-        }
         return result;
       } else if (operator === '!=') {
         // Use strict inequality for boolean comparison
         const result = itemBoolValue !== filterBoolValue;
-        if (config.debug) {
-          console.log('Boolean inequality result:', { itemBoolValue, filterBoolValue, result });
-        }
         return result;
       }
 
@@ -764,7 +713,7 @@ export function useDatatable(config: TableConfig) {
 
       if (typeof value === 'object') {
         // For object filters, convert values based on type
-        const processedFilter = { ...value };
+        const processedFilter: any = { ...value };
 
         // Convert value based on detected type
         if (processedFilter.value !== undefined) {
@@ -1394,10 +1343,7 @@ export function useDatatable(config: TableConfig) {
       // Clean up
       URL.revokeObjectURL(url);
     } catch (error) {
-      if (config.debug) {
-        console.error('Error exporting to Excel:', error);
-        console.log('You may need to install the ExcelJS library: npm install exceljs');
-      }
+      console.error('Error exporting to Excel:', error);
       throw new Error('Failed to export to Excel. ExcelJS library may be missing.');
     }
   };
@@ -1522,10 +1468,9 @@ export function useDatatable(config: TableConfig) {
       // Save PDF
       doc.save(`${fileName}.pdf`);
     } catch (error: unknown) {
+      console.error('Error exporting to PDF:', error);
       if (config.debug) {
-        console.error('Error exporting to PDF:', error);
         console.log('You may need to install the jsPDF library: npm install jspdf');
-
         // Check if error has a message property and it includes 'autoTable'
         if (error instanceof Error && error.message.includes('autoTable')) {
           console.log('For better tables, install jspdf-autotable: npm install jspdf-autotable');
@@ -1536,7 +1481,7 @@ export function useDatatable(config: TableConfig) {
   };
 
   // Watch for config changes
-  watch(() => config.perPage, (newPerPage) => {
+  watch(() => config.perPage, (newPerPage: any) => {
     if (newPerPage && newPerPage !== state.value.pagination.perPage) {
       setPageSize(newPerPage)
     }
