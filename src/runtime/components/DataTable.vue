@@ -511,6 +511,7 @@ onMounted(async () => {
 
         <!-- Table Body -->
         <tbody>
+          <!-- Loading Slot -->
           <slot name="loading" v-if="loading">
             <tr class="arpix-data-table-loading-row">
               <td :colspan="selectable ? visibleColumns.length + 1 : visibleColumns.length" class="arpix-data-table-loading-cell">
@@ -519,6 +520,7 @@ onMounted(async () => {
             </tr>
           </slot>
 
+          <!-- Error Slot -->
           <slot name="error" v-else-if="error">
             <tr class="arpix-data-table-error-row">
               <td :colspan="selectable ? visibleColumns.length + 1 : visibleColumns.length" class="arpix-data-table-error-cell">
@@ -527,6 +529,7 @@ onMounted(async () => {
             </tr>
           </slot>
 
+          <!-- Empty Slot -->
           <slot name="empty" v-else-if="!displayItems || !displayItems.length">
             <tr class="arpix-data-table-empty-row">
               <td :colspan="selectable ? visibleColumns.length + 1 : visibleColumns.length" class="arpix-data-table-empty-cell">
@@ -537,7 +540,7 @@ onMounted(async () => {
                         <path fill="currentColor" d="m426.645 273.941l.022 99.392l-170.667 96l-170.667-96l-.021-97.749l42.667 24.939l.021 47.85l106.667 59.99l-.022-74.027l21.502-13.189l21.165 13.018l.021 74.198L384 348.352l-.021-49.493zM208.019 57.681l47.391 27.99l.59-.338l.263.146l44.881-26.492l179.404 104.569l-45.042 27.651l45.05 26.593l-180.519 105.42l-44.008-27.032l-45.39 27.898l-180.518-105.42l46.046-27.203l-47.552-29.212zM406.934 192l-151.039-83.072L107.892 192l148.003 83.072z"/>
                       </svg>
                     </div>
-                    <div class="arpix-data-table-empty-text">{{ noDataText }}</div>
+                    <div class="arpix-data-table-empty-text">{{ tableConfig.noDataText }}</div>
                   </div>
                 </div>
                 <div class="arpix-data-table-debug" v-if="props.debug && debug.displayItems === 0">Debug: {{ debug }}</div>
