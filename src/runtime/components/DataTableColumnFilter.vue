@@ -162,7 +162,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed, watch, onMounted, onUnmounted, reactive } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, reactive } from '#imports'
 import type { TableColumn, FilterConfig } from '../types'
 import { format, parse, isValid, parseISO } from 'date-fns'
 import DataTableRelationFilter from './DataTableRelationFilter.vue'
@@ -359,7 +359,7 @@ if (props.debug) {
 }
 
 // Watch for changes in active filters
-watch(() => props.activeFilters, (newFilters) => {
+watch(() => props.activeFilters, (newFilters: any) => {
   if (newFilters && props.column.key in newFilters) {
     const filter = newFilters[props.column.key]
 
@@ -710,7 +710,7 @@ const handleEscapeKey = (event: KeyboardEvent) => {
 }
 
 // Watch filter menu state changes
-watch(() => showFilterMenu.value, (newValue) => {
+watch(() => showFilterMenu.value, (newValue: any) => {
   if (props.debug) {
     console.log(`Filter ${filterId} menu state changed:`, newValue)
   }

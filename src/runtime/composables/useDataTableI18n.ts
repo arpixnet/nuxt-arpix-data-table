@@ -1,4 +1,4 @@
-import { computed } from 'vue'
+import { computed } from '#imports'
 import { useNuxtApp } from '#app'
 import defaultTranslations from '../i18n/translations'
 
@@ -6,10 +6,10 @@ import defaultTranslations from '../i18n/translations'
  * Composable for handling i18n in the data table
  */
 export function useDataTableI18n() {
-  const nuxtApp = useNuxtApp()
+  const nuxtApp: any = useNuxtApp()
 
   // Get the module options
-  const config = nuxtApp.$arpixDataTable?.config || {
+  const config: any = nuxtApp.$arpixDataTable?.config || {
     perPage: 10,
     paginationType: 'client',
     searchable: true,
@@ -66,7 +66,7 @@ export function useDataTableI18n() {
 
   // Merge default translations with custom translations
   const messages = computed(() => {
-    const result = { ...defaultTranslations }
+    const result: any = { ...defaultTranslations }
     const debug = nuxtApp.$arpixDataTable?.config?.debug
 
     if (debug) {
