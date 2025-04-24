@@ -122,7 +122,7 @@ export default defineNuxtModule<ModuleOptions>({
     })
 
     // Make options available to the rest of the app
-    // @ts-ignore - We know the options are compatible
+    // @ts-expect-error - We know the options are compatible
     nuxt.options.runtimeConfig.public.arpixDataTable = options
   },
 })

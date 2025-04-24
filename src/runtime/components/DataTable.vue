@@ -299,11 +299,11 @@ const props = withDefaults(defineProps<{
   showFooter: true,
   showPagination: true,
   showSearch: true,
-  debug: () => useNuxtApp().$arpixDataTable?.config?.debug ?? false,
+  debug: false,
   loading: false,
   error: '',
   noDataText: '',
-  initialPage: 1
+  initialPage: 1,
 })
 
 // Define emits
@@ -323,7 +323,7 @@ const emit = defineEmits<{
 // const slots = useSlots()
 
 // Use the i18n composable
-const { t, currentLocale } = useDataTableI18n()
+const { t } = useDataTableI18n()
 const searchPlaceholder = ref('')
 
 // Create the table configuration

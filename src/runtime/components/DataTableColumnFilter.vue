@@ -14,149 +14,149 @@
 
     <teleport to="body">
       <div v-if="showFilterMenu" class="arpix-data-table-filter-menu" :style="menuStyle">
-      <div class="arpix-data-table-filter-header">
-        <span>{{ t('filters.title') }}: {{ column.label }}</span>
-        <button class="arpix-data-table-filter-close" @click.stop="toggleFilterMenu($event)">×</button>
+        <div class="arpix-data-table-filter-header">
+          <span>{{ t('filters.title') }}: {{ column.label }}</span>
+          <button class="arpix-data-table-filter-close" @click.stop="toggleFilterMenu($event)">×</button>
+        </div>
+
+        <div class="arpix-data-table-filter-content">
+          <!-- Text/String filter -->
+          <div v-if="!column.type || column.type === 'text'" class="arpix-data-table-filter-group">
+            <select v-model="filterOperator" class="arpix-data-table-filter-select">
+              <option value="contains">{{ t('filters.contains') }}</option>
+              <option value="=">{{ t('filters.equals') }}</option>
+              <option value="startsWith">{{ t('filters.startsWith') }}</option>
+              <option value="endsWith">{{ t('filters.endsWith') }}</option>
+            </select>
+            <input
+              type="text"
+              v-model="filterValue"
+              class="arpix-data-table-filter-input"
+              :placeholder="t('filters.filterValue')"
+              @keyup.enter="applyFilter"
+              @keyup.esc="showFilterMenu = false"
+            />
+          </div>
+
+          <!-- Number filter -->
+          <div v-else-if="column.type === 'number'" class="arpix-data-table-filter-group">
+            <select v-model="filterOperator" class="arpix-data-table-filter-select">
+              <option value="=">{{ t('filters.equals') }}</option>
+              <option value="!=">{{ t('filters.notEquals') }}</option>
+              <option value=">">{{ t('filters.greaterThan') }}</option>
+              <option value=">=">{{ t('filters.greaterThanOrEquals') }}</option>
+              <option value="<">{{ t('filters.lessThan') }}</option>
+              <option value="<=">{{ t('filters.lessThanOrEquals') }}</option>
+            </select>
+            <input
+              type="number"
+              v-model="filterValue"
+              class="arpix-data-table-filter-input"
+              :placeholder="t('filters.filterValue')"
+              @keyup.enter="applyFilter"
+              @keyup.esc="showFilterMenu = false"
+            />
+          </div>
+
+          <!-- Date filter -->
+          <div v-else-if="column.type === 'date'" class="arpix-data-table-filter-group">
+            <select v-model="filterOperator" class="arpix-data-table-filter-select">
+              <option value="=">{{ t('filters.equals') }}</option>
+              <option value="!=">{{ t('filters.notEquals') }}</option>
+              <option value=">">{{ t('filters.after') }}</option>
+              <option value="<">{{ t('filters.before') }}</option>
+            </select>
+            <input
+              type="date"
+              v-model="dateFilterValue"
+              class="arpix-data-table-filter-input"
+              @keyup.esc="showFilterMenu = false"
+            />
+            <div class="arpix-data-table-filter-date-info" v-if="dateFilterValue">
+              Selected date: {{ formatDateForDisplay(dateFilterValue) }}
+            </div>
+          </div>
+
+          <!-- Boolean filter -->
+          <div v-else-if="column.type === 'boolean'" class="arpix-data-table-filter-group">
+            <div class="arpix-data-table-filter-radio-group">
+              <div class="arpix-data-table-filter-radio">
+                <input
+                  type="radio"
+                  id="filter-boolean-true"
+                  name="boolean-filter"
+                  value="true"
+                  v-model="booleanValue"
+                />
+                <label for="filter-boolean-true">{{ t('boolean.true') }}</label>
+              </div>
+              <div class="arpix-data-table-filter-radio">
+                <input
+                  type="radio"
+                  id="filter-boolean-false"
+                  name="boolean-filter"
+                  value="false"
+                  v-model="booleanValue"
+                />
+                <label for="filter-boolean-false">{{ t('boolean.false') }}</label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Relation filter -->
+          <div v-else-if="column.type === 'relation'" class="arpix-data-table-filter-group">
+            <DataTableRelationFilter
+              :column="column"
+              :active-filter="activeFilters[column.key]"
+              :debug="debug"
+              :api-endpoint="column.relation?.apiEndpoint"
+              @update:value="onRelationFilterChange"
+            />
+          </div>
+
+          <!-- Enum/Status filter (auto-detected) -->
+          <div v-else-if="column.enumValues || isEnumField" class="arpix-data-table-filter-group">
+            <div v-if="enumValues.length <= 3" class="arpix-data-table-filter-checkboxes">
+              <div v-for="value in enumValues" :key="value" class="arpix-data-table-filter-checkbox">
+                <input
+                  type="checkbox"
+                  :id="`filter-${column.key}-${value}`"
+                  :value="value"
+                  v-model="selectedEnumValues"
+                  @change="onEnumValueChange"
+                />
+                <label :for="`filter-${column.key}-${value}`">{{ value }}</label>
+              </div>
+            </div>
+            <select
+              v-else
+              v-model="filterValue"
+              class="arpix-data-table-filter-select"
+              @change="onSelectChange"
+            >
+              <option value="">{{ t('filters.select') }}</option>
+              <option v-for="value in enumValues" :key="value" :value="value">{{ value }}</option>
+            </select>
+          </div>
+
+          <div class="arpix-data-table-filter-actions">
+            <button
+              class="arpix-data-table-filter-apply"
+              @click.stop="applyFilter"
+              :disabled="!filterValue && selectedEnumValues.length === 0 && !dateFilterValue && !booleanValue"
+            >
+              {{ t('filters.apply') }}
+            </button>
+            <button
+              class="arpix-data-table-filter-clear"
+              @click.stop="clearFilter"
+              :disabled="!isActive"
+            >
+              {{ t('filters.clear') }}
+            </button>
+          </div>
+        </div>
       </div>
-
-      <div class="arpix-data-table-filter-content">
-        <!-- Text/String filter -->
-        <div v-if="!column.type || column.type === 'text'" class="arpix-data-table-filter-group">
-          <select v-model="filterOperator" class="arpix-data-table-filter-select">
-            <option value="contains">{{ t('filters.contains') }}</option>
-            <option value="=">{{ t('filters.equals') }}</option>
-            <option value="startsWith">{{ t('filters.startsWith') }}</option>
-            <option value="endsWith">{{ t('filters.endsWith') }}</option>
-          </select>
-          <input
-            type="text"
-            v-model="filterValue"
-            class="arpix-data-table-filter-input"
-            :placeholder="t('filters.filterValue')"
-            @keyup.enter="applyFilter"
-            @keyup.esc="showFilterMenu = false"
-          />
-        </div>
-
-        <!-- Number filter -->
-        <div v-else-if="column.type === 'number'" class="arpix-data-table-filter-group">
-          <select v-model="filterOperator" class="arpix-data-table-filter-select">
-            <option value="=">{{ t('filters.equals') }}</option>
-            <option value="!=">{{ t('filters.notEquals') }}</option>
-            <option value=">">{{ t('filters.greaterThan') }}</option>
-            <option value=">=">{{ t('filters.greaterThanOrEquals') }}</option>
-            <option value="<">{{ t('filters.lessThan') }}</option>
-            <option value="<=">{{ t('filters.lessThanOrEquals') }}</option>
-          </select>
-          <input
-            type="number"
-            v-model="filterValue"
-            class="arpix-data-table-filter-input"
-            :placeholder="t('filters.filterValue')"
-            @keyup.enter="applyFilter"
-            @keyup.esc="showFilterMenu = false"
-          />
-        </div>
-
-        <!-- Date filter -->
-        <div v-else-if="column.type === 'date'" class="arpix-data-table-filter-group">
-          <select v-model="filterOperator" class="arpix-data-table-filter-select">
-            <option value="=">{{ t('filters.equals') }}</option>
-            <option value="!=">{{ t('filters.notEquals') }}</option>
-            <option value=">">{{ t('filters.after') }}</option>
-            <option value="<">{{ t('filters.before') }}</option>
-          </select>
-          <input
-            type="date"
-            v-model="dateFilterValue"
-            class="arpix-data-table-filter-input"
-            @keyup.esc="showFilterMenu = false"
-          />
-          <div class="arpix-data-table-filter-date-info" v-if="dateFilterValue">
-            Selected date: {{ formatDateForDisplay(dateFilterValue) }}
-          </div>
-        </div>
-
-        <!-- Boolean filter -->
-        <div v-else-if="column.type === 'boolean'" class="arpix-data-table-filter-group">
-          <div class="arpix-data-table-filter-radio-group">
-            <div class="arpix-data-table-filter-radio">
-              <input
-                type="radio"
-                id="filter-boolean-true"
-                name="boolean-filter"
-                value="true"
-                v-model="booleanValue"
-              />
-              <label for="filter-boolean-true">{{ t('boolean.true') }}</label>
-            </div>
-            <div class="arpix-data-table-filter-radio">
-              <input
-                type="radio"
-                id="filter-boolean-false"
-                name="boolean-filter"
-                value="false"
-                v-model="booleanValue"
-              />
-              <label for="filter-boolean-false">{{ t('boolean.false') }}</label>
-            </div>
-          </div>
-        </div>
-
-        <!-- Relation filter -->
-        <div v-else-if="column.type === 'relation'" class="arpix-data-table-filter-group">
-          <DataTableRelationFilter
-            :column="column"
-            :active-filter="activeFilters[column.key]"
-            :debug="debug"
-            :api-endpoint="column.relation?.apiEndpoint"
-            @update:value="onRelationFilterChange"
-          />
-        </div>
-
-        <!-- Enum/Status filter (auto-detected) -->
-        <div v-else-if="column.enumValues || isEnumField" class="arpix-data-table-filter-group">
-          <div v-if="enumValues.length <= 3" class="arpix-data-table-filter-checkboxes">
-            <div v-for="value in enumValues" :key="value" class="arpix-data-table-filter-checkbox">
-              <input
-                type="checkbox"
-                :id="`filter-${column.key}-${value}`"
-                :value="value"
-                v-model="selectedEnumValues"
-                @change="onEnumValueChange"
-              />
-              <label :for="`filter-${column.key}-${value}`">{{ value }}</label>
-            </div>
-          </div>
-          <select
-            v-else
-            v-model="filterValue"
-            class="arpix-data-table-filter-select"
-            @change="onSelectChange"
-          >
-            <option value="">{{ t('filters.select') }}</option>
-            <option v-for="value in enumValues" :key="value" :value="value">{{ value }}</option>
-          </select>
-        </div>
-
-        <div class="arpix-data-table-filter-actions">
-          <button
-            class="arpix-data-table-filter-apply"
-            @click.stop="applyFilter"
-            :disabled="!filterValue && selectedEnumValues.length === 0 && !dateFilterValue && !booleanValue"
-          >
-            {{ t('filters.apply') }}
-          </button>
-          <button
-            class="arpix-data-table-filter-clear"
-            @click.stop="clearFilter"
-            :disabled="!isActive"
-          >
-            {{ t('filters.clear') }}
-          </button>
-        </div>
-      </div>
-    </div>
     </teleport>
   </div>
 </template>
@@ -439,8 +439,8 @@ const filterButton = ref<HTMLElement | null>(null);
 // Menu position and style
 const menuStyle = reactive({
   position: 'fixed',
-  top: '0px',
-  left: '0px',
+  top: '-50px',
+  left: '-50px',
   zIndex: '9999'
 });
 

@@ -80,7 +80,7 @@ const isSelected = (item: any) => {
   if (!props.selected) return false
 
   if (props.rowKey && item[props.rowKey]) {
-    return props.selected.some(selected => selected[props.rowKey] === item[props.rowKey])
+    return props.selected.some(selected => selected[props.rowKey!] === item[props.rowKey!])
   }
 
   return props.selected.includes(item)
@@ -92,7 +92,7 @@ const toggleSelect = (item: any) => {
   if (isSelected(item)) {
     // Remove from selection
     if (props.rowKey && item[props.rowKey]) {
-      const index = newSelected.findIndex(selected => selected[props.rowKey] === item[props.rowKey])
+      const index = newSelected.findIndex(selected => selected[props.rowKey!] === item[props.rowKey!])
       if (index !== -1) {
         newSelected.splice(index, 1)
       }
@@ -178,18 +178,20 @@ const formatCellValue = (item: any, column: TableColumn) => {
             return `$${Number(value).toFixed(2)}`
           case 'status-format':
             // Generate a class name based on the value
+            // eslint-disable-next-line no-case-declarations
             const statusClass = `status-${value.toString().toLowerCase().replace(/\s+/g, '-')}`
 
             // Check if custom colors are defined for this status value
+            // eslint-disable-next-line no-case-declarations
             const hasCustomColors = column.statusColors && column.statusColors[value]
 
             if (hasCustomColors) {
               // Use custom inline styles if defined
-              const customColors = column.statusColors[value]
+              const customColors = column.statusColors?.[value]
               const customStyle = [
-                customColors.background ? `background-color: ${customColors.background};` : '',
-                customColors.text ? `color: ${customColors.text};` : '',
-                customColors.border ? `border-color: ${customColors.border};` : ''
+                customColors?.background ? `background-color: ${customColors.background};` : '',
+                customColors?.text ? `color: ${customColors.text};` : '',
+                customColors?.border ? `border-color: ${customColors.border};` : ''
               ].filter(Boolean).join(' ')
 
               return `<span class="status-badge" style="${customStyle}">${value}</span>`

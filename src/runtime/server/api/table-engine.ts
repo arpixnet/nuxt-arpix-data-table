@@ -18,8 +18,8 @@ export default defineEventHandler(async (event) => {
     const query = getQuery(event)
 
     // Parse pagination parameters
-    const page = parseInt(query.page as string) || 1
-    const perPage = parseInt(query.perPage as string) || 10
+    const page = Number.parseInt(query.page as string) || 1
+    const perPage = Number.parseInt(query.perPage as string) || 10
 
     // Parse sort parameter
     let sort: SortConfig | null = null
@@ -224,8 +224,8 @@ async function handleDataRequest(event: any, options: {
         // Special handling for dates
         if (typeof itemValue === 'string' && typeof value === 'string') {
           // Check if both values look like dates
-          const isItemDate = !isNaN(Date.parse(itemValue));
-          const isFilterDate = !isNaN(Date.parse(value));
+          const isItemDate = !Number.isNaN(Date.parse(itemValue));
+          const isFilterDate = !Number.isNaN(Date.parse(value));
 
           if (isItemDate && isFilterDate) {
             try {
@@ -307,7 +307,7 @@ async function handleDataRequest(event: any, options: {
 
         // Special handling for ID fields
         const isIdField = field.toLowerCase().includes('id');
-        const bothNumeric = !isNaN(Number(itemValue)) && !isNaN(Number(value));
+        const bothNumeric = !Number.isNaN(Number(itemValue)) && !Number.isNaN(Number(value));
 
         // For ID fields with equality operator, we need special handling
         if (isIdField && operator === '=') {

@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
     if (!table) {
       throw createError({
         statusCode: 400,
-        statusMessage: 'Missing table parameter'
+        statusMessage: 'Missing table parameter',
       })
     }
 
@@ -25,7 +25,8 @@ export default defineEventHandler(async (event) => {
     // This is just a placeholder that returns an empty array
     // The actual implementation should be provided by the application
     return []
-  } catch (error) {
+  }
+  catch (error) {
     console.error('Error in relation-options endpoint:', error)
     throw error
   }

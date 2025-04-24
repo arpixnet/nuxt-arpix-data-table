@@ -314,6 +314,7 @@ const handleFilterUpdate = (key: string, filter: FilterConfig | null) => {
 
   if (filter === null) {
     // Remove filter
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
     delete newFilters[key]
   } else {
     // Add or update filter

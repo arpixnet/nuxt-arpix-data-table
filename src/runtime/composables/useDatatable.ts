@@ -66,7 +66,6 @@ export function useDatatable(config: TableConfig) {
       } else if (typeof config.dataSource === 'function') {
         // Function data source (client-side only)
         try {
-          // @ts-ignore - We know this is a function, but TypeScript doesn't because we removed it from the type definition
           data = await config.dataSource({
             pagination: state.value.pagination,
             sort: state.value.sort,
@@ -282,18 +281,19 @@ export function useDatatable(config: TableConfig) {
         }
 
         // Skip if the value looks like a date string
-        if (typeof value === 'string' && !isNaN(Date.parse(value))) {
+        if (typeof value === 'string' && !Number.isNaN(Date.parse(value))) {
           // Check if it matches common date formats
           if (/^\d{4}-\d{2}-\d{2}/.test(value) || // ISO format
-              /^\d{2}[\/-]\d{2}[\/-]\d{4}/.test(value)) { // MM/DD/YYYY or DD/MM/YYYY
+              /^\d{2}[/-]\d{2}[/-]\d{4}/.test(value)) { // MM/DD/YYYY or DD/MM/YYYY
                 if (config.debug) console.log(`Skipping search in column ${column.key}: value looks like a date`, value);
             return false;
           }
         }
 
         // Skip if the value is a numeric string
-        if (typeof value === 'string' && !isNaN(Number(value)) && value.trim() !== '') {
+        if (typeof value === 'string' && !Number.isNaN(Number(value)) && value.trim() !== '') {
           // Only skip if it's a pure number (no letters)
+          // eslint-disable-next-line regexp/no-unused-capturing-group
           if (/^-?\d+(\.\d+)?$/.test(value)) {
             if (config.debug) console.log(`Skipping search in column ${column.key}: value is numeric string`, value);
             return false;
@@ -420,7 +420,7 @@ export function useDatatable(config: TableConfig) {
       } else if (typeof itemValue === 'boolean') {
         type = 'boolean';
       } else if (itemValue instanceof Date ||
-                (typeof itemValue === 'string' && !isNaN(Date.parse(itemValue)))) {
+                (typeof itemValue === 'string' && !Number.isNaN(Date.parse(itemValue)))) {
         type = 'date';
       }
     }
@@ -431,7 +431,7 @@ export function useDatatable(config: TableConfig) {
                       String(filterValue).toLowerCase().includes('id'));
 
     // Check if both values are numeric strings or numbers
-    const bothNumeric = !isNaN(Number(itemValue)) && !isNaN(Number(filterValue));
+    const bothNumeric = !Number.isNaN(Number(itemValue)) && !Number.isNaN(Number(filterValue));
 
     // For ID fields, we need to be more careful with type conversion
     if (isIdField) {
@@ -704,7 +704,7 @@ export function useDatatable(config: TableConfig) {
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         const aDate = new Date(aValue)
         const bDate = new Date(bValue)
-        if (!isNaN(aDate.getTime()) && !isNaN(bDate.getTime())) {
+        if (!Number.isNaN(aDate.getTime()) && !Number.isNaN(bDate.getTime())) {
           return multiplier * (aDate.getTime() - bDate.getTime())
         }
       }
@@ -770,11 +770,12 @@ export function useDatatable(config: TableConfig) {
         if (processedFilter.value !== undefined) {
           // Special handling for ID fields
           const isIdField = key.toLowerCase().includes('id');
-          const isNumericValue = !isNaN(Number(processedFilter.value)) && typeof processedFilter.value !== 'boolean';
+          const isNumericValue = !Number.isNaN(Number(processedFilter.value)) && typeof processedFilter.value !== 'boolean';
 
           if (isIdField) {
             // For ID fields, preserve the original type
             // If it's a numeric string but the field is named 'id', we keep it as is
+            // eslint-disable-next-line no-self-assign
             processedFilter.value = processedFilter.value;
           } else if (type === 'number' || (!type && isNumericValue)) {
             // For numeric fields, convert to number
@@ -809,7 +810,7 @@ export function useDatatable(config: TableConfig) {
         if (isIdField) {
           // For ID fields, preserve the original value
           params.append(`filter[${key}]`, String(value))
-        } else if (type === 'number' || (!isNaN(Number(value)) && typeof value !== 'boolean')) {
+        } else if (type === 'number' || (!Number.isNaN(Number(value)) && typeof value !== 'boolean')) {
           // Convert to number if it's a numeric string
           params.append(`filter[${key}]`, String(Number(value)))
         } else {
@@ -1333,7 +1334,6 @@ export function useDatatable(config: TableConfig) {
 
     // Dynamically import ExcelJS only when needed
     try {
-      // @ts-expect-error - ExcelJS will be loaded dynamically
       const ExcelJS = await import('exceljs');
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet(sheetName);
@@ -1421,14 +1421,13 @@ export function useDatatable(config: TableConfig) {
 
     try {
       // Dynamically import jsPDF only when needed
-      // @ts-expect-error - jsPDF will be loaded dynamically
       const jsPDFModule = await import('jspdf');
       const jsPDF = jsPDFModule.jsPDF || jsPDFModule.default;
 
       // Create new PDF document
       const doc = new jsPDF({
         orientation,
-        unit,
+        unit: unit as "pt" | "px" | "mm" | "cm" | "in" | "pc" | "em" | "ex",
         format,
       });
 
@@ -1472,8 +1471,8 @@ export function useDatatable(config: TableConfig) {
       doc.setFontSize(10);
 
       // Check if autoTable plugin is available
-      if (typeof doc.autoTable === 'function') {
-        doc.autoTable({
+      if (typeof (doc as any).autoTable === 'function') {
+        (doc as any).autoTable({
           startY: 40,
           head: [tableData[0]],
           body: tableData.slice(1),

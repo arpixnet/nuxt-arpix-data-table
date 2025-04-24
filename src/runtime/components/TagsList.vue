@@ -1,7 +1,7 @@
 <template>
   <div class="arpix-tags-container">
-    <span 
-      v-for="(tag, index) in tags" 
+    <span
+      v-for="(tag, index) in tags"
       :key="index"
       class="arpix-tag"
       :class="{ 'arpix-tag-clickable': clickable }"
@@ -16,26 +16,24 @@
 </template>
 
 <script lang="ts" setup>
-import { computed } from 'vue';
-
 const props = defineProps<{
   /**
    * Array of tags to display
    */
   tags: string[] | number[];
-  
+
   /**
    * Custom colors for specific tags
    * @example { 'important': '#ff0000', 'normal': '#00ff00' }
    */
   colorMap?: Record<string, string>;
-  
+
   /**
    * Default background color for tags without a specific color in colorMap
    * @default '#f3f4f6'
    */
   defaultColor?: string;
-  
+
   /**
    * Whether tags are clickable
    * @default false
@@ -56,13 +54,13 @@ const emit = defineEmits<{
 const getTagStyle = (tag: string | number) => {
   const tagString = String(tag);
   const style: Record<string, string> = {};
-  
+
   if (props.colorMap && tagString in props.colorMap) {
     style.backgroundColor = props.colorMap[tagString];
   } else {
     style.backgroundColor = props.defaultColor || 'var(--arpix-tag-bg, #f3f4f6)';
   }
-  
+
   return style;
 };
 

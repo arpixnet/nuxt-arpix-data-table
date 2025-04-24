@@ -44,6 +44,6 @@ export function useRelationLabels() {
     relationLabels,
     setRelationLabel,
     getRelationLabel,
-    hasRelationLabel
+    hasRelationLabel,
   }
 }

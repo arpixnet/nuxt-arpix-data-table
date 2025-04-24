@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useNuxtApp } from '#app'
 import defaultTranslations from '../i18n/translations'
 
@@ -9,7 +9,18 @@ export function useDataTableI18n() {
   const nuxtApp = useNuxtApp()
 
   // Get the module options
-  const config = nuxtApp.$arpixDataTable?.config || {}
+  const config = nuxtApp.$arpixDataTable?.config || {
+    perPage: 10,
+    paginationType: 'client',
+    searchable: true,
+    theme: 'default',
+    debug: false,
+    i18n: {
+      enabled: true,
+      defaultLocale: 'en',
+      messages: {}
+    }
+  }
 
   // Check if i18n is enabled in the module options
   const i18nEnabled = computed(() => config.i18n?.enabled !== false)
@@ -35,7 +46,8 @@ export function useDataTableI18n() {
       if (debug) {
         console.log('Using locale from @nuxtjs/i18n:', locale)
       }
-    } else {
+    }
+    else {
       if (debug) {
         console.log('Using default locale:', locale)
       }
@@ -63,7 +75,7 @@ export function useDataTableI18n() {
     }
 
     // Merge custom translations
-    Object.keys(customTranslations.value).forEach(locale => {
+    Object.keys(customTranslations.value).forEach((locale) => {
       if (!result[locale]) {
         result[locale] = { datatable: {} }
       }
@@ -76,7 +88,7 @@ export function useDataTableI18n() {
       }
 
       // Handle dot notation keys (e.g., 'pagination.itemsPerPage')
-      Object.keys(customLocaleTranslations).forEach(key => {
+      Object.keys(customLocaleTranslations).forEach((key) => {
         if (key.includes('.')) {
           const parts = key.split('.')
           let current = result[locale].datatable
@@ -105,7 +117,8 @@ export function useDataTableI18n() {
           if (debug) {
             console.log(`Set value for '${lastPart}' to:`, customLocaleTranslations[key])
           }
-        } else {
+        }
+        else {
           // Handle regular keys
           result[locale].datatable[key] = customLocaleTranslations[key]
 
@@ -129,7 +142,7 @@ export function useDataTableI18n() {
    * @param params Optional parameters for the translation
    * @returns The translated string
    */
-  const t = (key: string, params?: Record<string, any>) => {
+  const t = (key: string, params?: Record<string, unknown>) => {
     // If i18n is not enabled, return the key
     if (!i18nEnabled.value) {
       console.log('i18n is disabled, returning key:', key)
@@ -229,7 +242,7 @@ export function useDataTableI18n() {
     let result = translation
 
     if (params) {
-      Object.keys(params).forEach(param => {
+      Object.keys(params).forEach((param) => {
         result = result.replace(`{${param}}`, params[param])
       })
     }
@@ -246,6 +259,6 @@ export function useDataTableI18n() {
     currentLocale,
     defaultLocale,
     i18nEnabled,
-    hasNuxtI18n
+    hasNuxtI18n,
   }
 }

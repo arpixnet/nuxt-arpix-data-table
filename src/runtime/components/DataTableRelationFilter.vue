@@ -1,4 +1,3 @@
-
 <template>
   <div class="arpix-data-table-filter-group">
     <div class="arpix-data-table-relation-select-wrapper">
