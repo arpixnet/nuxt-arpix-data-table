@@ -46,25 +46,25 @@ The module uses CSS variables for theming. You can customize these variables to 
   --arpix-success-color: #10b981;
   --arpix-warning-color: #f59e0b;
   --arpix-error-color: #ef4444;
-  
+
   /* Light theme */
-  --arpix-bg-color: #ffffff;
-  --arpix-text-color: #1f2937;
-  --arpix-border-color: #e5e7eb;
-  --arpix-header-bg: #f9fafb;
-  --arpix-header-text: #4b5563;
-  --arpix-row-hover: #f3f4f6;
+  --arpix-background-color: #ffffff;
+  --arpix-text-color: #1e293b;
+  --arpix-border-color: #e2e8f0;
+  --arpix-header-background: #f1f5f9;
+  --arpix-header-text-color: #334155;
+  --arpix-hover-color: #f8fafc;
   --arpix-row-selected: #eff6ff;
-  
+
   /* Dark theme */
-  --arpix-bg-color-dark: #1f2937;
-  --arpix-text-color-dark: #f9fafb;
-  --arpix-border-color-dark: #374151;
-  --arpix-header-bg-dark: #111827;
-  --arpix-header-text-dark: #e5e7eb;
-  --arpix-row-hover-dark: #374151;
-  --arpix-row-selected-dark: #1e3a8a;
-  
+  --arpix-background-color: #1e293b;
+  --arpix-text-color: #f1f5f9;
+  --arpix-border-color: #334155;
+  --arpix-header-background: #0f172a;
+  --arpix-header-text-color: #e2e8f0;
+  --arpix-hover-color: #334155;
+  --arpix-row-selected: #1e3a8a;
+
   /* Form elements */
   --arpix-input-bg: #f9fafb;
   --arpix-input-border: #d1d5db;
@@ -110,8 +110,8 @@ Add the variables to your global CSS file:
 /* assets/css/main.css */
 :root {
   --arpix-primary-color: #8b5cf6; /* Purple instead of blue */
-  --arpix-header-bg: #f5f3ff;
-  --arpix-header-text: #6d28d9;
+  --arpix-header-background: #f5f3ff;
+  --arpix-header-text-color: #6d28d9;
 }
 ```
 
@@ -126,8 +126,8 @@ export default defineNuxtConfig({
   arpixDataTable: {
     themeVars: {
       'primary-color': '#8b5cf6',
-      'header-bg': '#f5f3ff',
-      'header-text': '#6d28d9'
+      'header-background': '#f5f3ff',
+      'header-text-color': '#6d28d9'
     }
   }
 })
@@ -144,8 +144,8 @@ Set the variables at the component level:
     :data-source="data"
     :theme-vars="{
       'primary-color': '#8b5cf6',
-      'header-bg': '#f5f3ff',
-      'header-text': '#6d28d9'
+      'header-background': '#f5f3ff',
+      'header-text-color': '#6d28d9'
     }"
   />
 </template>

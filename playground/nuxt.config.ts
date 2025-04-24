@@ -11,6 +11,15 @@ export default defineNuxtConfig({
     searchable: true,
     theme: 'default',
     debug: false,
+    // Example of global theme variables configuration
+    themeVars: {
+      // Uncomment to apply these theme variables globally
+      // 'primary-color': '#8b5cf6',       // Purple instead of default blue
+      // 'header-background': '#f5f3ff',   // Light purple background for header
+      // 'header-text-color': '#6d28d9',   // Dark purple text for header
+      // 'border-color': '#e9d5ff',        // Light purple border
+      // 'hover-color': '#faf5ff',         // Very light purple for row hover
+    },
     i18n: {
       enabled: true,
       defaultLocale: 'en', // Default locale, will be overridden by cookie if available

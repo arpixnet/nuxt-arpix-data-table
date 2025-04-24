@@ -450,8 +450,13 @@ export default defineNuxtConfig({
     // Appearance
     theme: 'default',           // Default theme ('default' or 'dark')
     themeVars: {                // Custom CSS variables for theming
-      // 'progress-bg': '#f0f0f0',
-      // 'tag-bg': '#e5e7eb',
+      // 'primary-color': '#8b5cf6',       // Purple instead of default blue
+      // 'header-background': '#f5f3ff',   // Light purple background for header
+      // 'header-text-color': '#6d28d9',   // Dark purple text for header
+      // 'border-color': '#e9d5ff',        // Light purple border
+      // 'hover-color': '#faf5ff',         // Very light purple for row hover
+      // 'progress-bg': '#f0f0f0',         // Custom progress bar background
+      // 'tag-bg': '#e5e7eb',              // Custom tag background
     },
 
     // Internationalization

@@ -244,7 +244,7 @@
             filterable: true,
             type: 'relation',
             relation: {
-                table: 'department', // Cambiado a singular para coincidir con la respuesta del API
+                table: 'department', // Changed to singular to match API response
                 displayField: 'name',
                 foreignKey: 'department_id',
                 apiEndpoint: '/api/playground/relation-options'
@@ -332,10 +332,23 @@
         </div>
 
         <div class="example-section">
-            <h2 class="section-title">Alphanumeric IDs Example</h2>
-            <ArpixDataTable :columns="alphaIdColumns" :data-source="alphaIdData" />
+            <h2 class="section-title">Alphanumeric IDs Example with Custom Theme</h2>
+            <ArpixDataTable
+                :columns="alphaIdColumns"
+                :data-source="alphaIdData"
+                :theme-vars="{
+                    'primary-color': '#8b5cf6',       // Purple instead of default blue
+                    'header-background': '#f5f3ff',   // Light purple background for header
+                    'header-text-color': '#6d28d9',   // Dark purple text for header
+                    'border-color': '#e9d5ff',        // Light purple border
+                    'hover-color': '#faf5ff',         // Very light purple for row hover
+                    'tag-bg': '#f3e8ff',              // Light purple for tags
+                    'progress-bg': '#f5f3ff'          // Light purple for progress bars
+                }"
+            />
             <div class="debug-info">
                 <p>Alphanumeric IDs: {{ alphaIdData.length }} items</p>
+                <p>This example demonstrates how to use themeVars to customize the appearance of the data table.</p>
             </div>
         </div>
 
