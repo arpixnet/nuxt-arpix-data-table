@@ -56,6 +56,12 @@ The module uses CSS variables for theming. You can customize these variables to 
   --arpix-hover-color: #f8fafc;
   --arpix-row-selected: #eff6ff;
 
+  /* Filter menu colors */
+  --arpix-filter-menu-bg: #ffffff;
+  --arpix-filter-apply-bg: #4CAF50;
+  --arpix-filter-apply-hover-bg: #45a049;
+  --arpix-input-bg: #f9fafb;
+
   /* Dark theme */
   --arpix-background-color: #1e293b;
   --arpix-text-color: #f1f5f9;
@@ -100,7 +106,7 @@ The module uses CSS variables for theming. You can customize these variables to 
 
 ## Customizing Theme Variables
 
-You can customize the theme variables in two ways:
+You can customize the theme variables in several ways:
 
 ### 1. Global CSS
 
@@ -109,9 +115,16 @@ Add the variables to your global CSS file:
 ```css
 /* assets/css/main.css */
 :root {
+  /* Table appearance */
   --arpix-primary-color: #8b5cf6; /* Purple instead of blue */
   --arpix-header-background: #f5f3ff;
   --arpix-header-text-color: #6d28d9;
+
+  /* Filter window appearance - use !important for filter window variables */
+  --arpix-filter-menu-bg: #f8f5ff !important;
+  --arpix-filter-apply-bg: #8b5cf6 !important;
+  --arpix-filter-apply-hover-bg: #7c3aed !important;
+  --arpix-input-bg: #f5f3ff !important;
 }
 ```
 
@@ -125,6 +138,7 @@ export default defineNuxtConfig({
   modules: ['nuxt-arpix-data-table'],
   arpixDataTable: {
     themeVars: {
+      // Table appearance
       'primary-color': '#8b5cf6',
       'header-background': '#f5f3ff',
       'header-text-color': '#6d28d9'
@@ -133,15 +147,16 @@ export default defineNuxtConfig({
 })
 ```
 
-### 3. Component Props
+### 3. Component Props and CSS Classes
 
-Set the variables at the component level:
+For table appearance, use the theme-vars prop:
 
 ```vue
 <template>
   <ArpixDataTable
     :columns="columns"
     :data-source="data"
+    table-class="custom-theme"
     :theme-vars="{
       'primary-color': '#8b5cf6',
       'header-background': '#f5f3ff',
@@ -150,6 +165,28 @@ Set the variables at the component level:
   />
 </template>
 ```
+
+For filter window appearance, define a CSS class:
+
+```vue
+<style>
+.custom-theme {
+  --arpix-primary-color: #8b5cf6;
+  --arpix-header-background: #f5f3ff;
+  --arpix-header-text-color: #6d28d9;
+}
+
+/* Filter window variables need !important */
+:root {
+  --arpix-filter-menu-bg: #f8f5ff !important;
+  --arpix-filter-apply-bg: #8b5cf6 !important;
+  --arpix-filter-apply-hover-bg: #7c3aed !important;
+  --arpix-input-bg: #f5f3ff !important;
+}
+</style>
+```
+
+> **Note:** The filter window is rendered outside the component using teleport, so you need to use `:root` selector with `!important` to style it.
 
 ## Row Density
 

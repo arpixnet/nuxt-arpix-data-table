@@ -450,13 +450,24 @@ export default defineNuxtConfig({
     // Appearance
     theme: 'default',           // Default theme ('default' or 'dark')
     themeVars: {                // Custom CSS variables for theming
+      // Table appearance
       // 'primary-color': '#8b5cf6',       // Purple instead of default blue
       // 'header-background': '#f5f3ff',   // Light purple background for header
       // 'header-text-color': '#6d28d9',   // Dark purple text for header
       // 'border-color': '#e9d5ff',        // Light purple border
       // 'hover-color': '#faf5ff',         // Very light purple for row hover
+
+      // Component appearance
       // 'progress-bg': '#f0f0f0',         // Custom progress bar background
       // 'tag-bg': '#e5e7eb',              // Custom tag background
+
+      // Note: For filter window styling, use global CSS with !important:
+      // :root {
+      //   --arpix-filter-menu-bg: #f8f5ff !important;      // Background for filter menu
+      //   --arpix-filter-apply-bg: #8b5cf6 !important;     // Background for Apply button
+      //   --arpix-filter-apply-hover-bg: #7c3aed !important; // Apply button hover
+      //   --arpix-input-bg: #f5f3ff !important;            // Background for input fields
+      // }
     },
 
     // Internationalization
